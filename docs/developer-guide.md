@@ -34,14 +34,14 @@ python3 -m build
 
 ## Project structure
 
+- `.claude-plugin/plugin.json`: official Claude Code plugin manifest
+- `commands/update-docs.md`: namespaced Claude command entrypoint
 - `src/claude_docsmith/cli.py`: CLI entrypoint and apply flow
 - `src/claude_docsmith/scanner.py`: repository scanning and file selection
 - `src/claude_docsmith/prompting.py`: prompt assembly and JSON instructions
 - `src/claude_docsmith/providers.py`: optional Ollama HTTP adapter
 - `src/claude_docsmith/models.py`: shared dataclasses and JSON parsing
 - `skills/update-docs/`: reusable documentation skill and checklists
-- `.claude/commands/update-docs.md`: Claude Code command wrapper
-- `.codex-plugin/plugin.json`: plugin metadata for marketplaces and cross-agent packaging
 
 ## Contribution workflow
 

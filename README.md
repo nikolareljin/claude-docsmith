@@ -1,6 +1,6 @@
 # Claude Docsmith
 
-`claude-docsmith` is a GitHub-ready repository for a documentation-focused Claude Code plugin and helper CLI.
+`claude-docsmith` is a Claude Code plugin for repository documentation, with a small optional helper CLI for prompt-pack generation and local Ollama fallback.
 
 It packages an `update-docs` skill, Claude Code command wiring, and a small Python tool that scans a repository and prepares repository context for Claude Code. If you want a fully local fallback, the CLI can also send the same prompt pack to Ollama.
 
@@ -27,8 +27,8 @@ It also still fits if you use Ollama locally for generation.
 ## What is included
 
 - A reusable `update-docs` skill under [`skills/update-docs`](./skills/update-docs)
-- A Claude Code command under [`.claude/commands/update-docs.md`](./.claude/commands/update-docs.md)
-- A Codex-style plugin manifest under [`.codex-plugin/plugin.json`](./.codex-plugin/plugin.json)
+- A Claude Code command under [`commands/update-docs.md`](./commands/update-docs.md)
+- An official Claude plugin manifest under [`.claude-plugin/plugin.json`](./.claude-plugin/plugin.json)
 - A Python CLI that:
   - scans the target repository
   - reads key docs and build metadata
@@ -39,7 +39,7 @@ It also still fits if you use Ollama locally for generation.
 
 ## Installation
 
-Installation is only required if you want the CLI helper. The skill files can be copied into Claude Code directly without installing Python.
+Installation is only required if you want the CLI helper. The plugin itself follows the official Claude Code plugin layout and can be loaded directly by Claude Code.
 
 ```bash
 python3 -m venv .venv
@@ -57,7 +57,19 @@ pip install -e ".[dev]"
 
 ## Quick start
 
-Build the prompt pack for Claude Code:
+Test the plugin locally with Claude Code:
+
+```bash
+claude --plugin-dir ./claude-docsmith
+```
+
+Then invoke the namespaced command:
+
+```text
+/claude-docsmith:update-docs
+```
+
+Build the prompt pack for Claude Code with the helper CLI:
 
 ```bash
 claude-docsmith /path/to/repo --dry-run
@@ -123,8 +135,8 @@ The model is instructed to return JSON like this:
 
 ```text
 claude-docsmith/
-├── .claude/commands/update-docs.md
-├── .codex-plugin/plugin.json
+├── .claude-plugin/plugin.json
+├── commands/update-docs.md
 ├── skills/update-docs/
 ├── src/claude_docsmith/
 └── tests/
@@ -156,7 +168,7 @@ No. It only generates or updates documentation files.
 
 ### Can I use only the skill without the CLI?
 
-Yes. The skill and the Claude command wrapper are plain text assets.
+Yes. The plugin works through Claude Code directly; the CLI is optional.
 
 ### Does this support private repositories?
 

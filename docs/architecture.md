@@ -15,6 +15,8 @@
 5. The response parser expects structured JSON with file targets and contents.
 6. The apply step writes documentation files only when `--apply` is set.
 
+For Claude Code plugin usage, the plugin manifest in `.claude-plugin/plugin.json` exposes the root-level `commands/` and `skills/` directories directly to Claude Code.
+
 ## Design choices
 
 - Standard library only: keeps installation simple.
