@@ -179,6 +179,31 @@ If the command does not appear, reload plugins:
 /reload-plugins
 ```
 
+### Install from the Claude UI
+
+Anthropic’s docs also support an interactive install flow through the plugin manager UI.
+
+1. Open Claude Code.
+2. Run:
+
+```text
+/plugin
+```
+
+3. Choose `Browse Plugins`.
+4. If you have not added this marketplace yet, add it first:
+
+```text
+/plugin marketplace add nikolareljin/claude-docsmith
+```
+
+5. Find `claude-docsmith` under the `nikolareljin-plugins` marketplace and install it.
+6. Verify the command appears and run:
+
+```text
+/claude-docsmith:update-docs
+```
+
 Build the prompt pack for Claude Code with the helper CLI:
 
 ```bash
@@ -313,6 +338,30 @@ claude plugin update claude-docsmith@nikolareljin-plugins
 ```
 
 See [docs/publishing.md](./docs/publishing.md) for the full maintainer workflow.
+
+### Publish to the official Claude plugin directory
+
+If you want this plugin to appear in Anthropic’s official plugin directory, Anthropic documents a separate submission flow.
+
+Current documented submission options:
+
+- Claude.ai form: `https://claude.ai/settings/plugins/submit`
+- Console form: `https://platform.claude.com/plugins/submit`
+
+According to Anthropic’s submission docs, you can submit either:
+
+- a GitHub link
+- or a zip file containing the plugin with its full folder structure
+
+Important points from Anthropic’s docs:
+
+- the official directory is surfaced in Claude Code as `claude-plugins-official`
+- every update requires re-submitting the form
+- Anthropic performs automated review, and some plugins may later receive an `Anthropic Verified` badge
+
+For this repository, the recommended submission artifact is the public GitHub repo:
+
+- `https://github.com/nikolareljin/claude-docsmith`
 
 ## What “publish” means here
 

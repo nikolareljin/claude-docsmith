@@ -32,6 +32,19 @@ Then install the plugin:
 claude plugin install claude-docsmith@nikolareljin-plugins
 ```
 
+Users can also install interactively through the Claude plugin UI:
+
+```text
+/plugin
+```
+
+Then:
+
+1. choose `Browse Plugins`
+2. add `nikolareljin/claude-docsmith` as a marketplace if it is not already present
+3. select `claude-docsmith`
+4. install it from the `nikolareljin-plugins` marketplace
+
 ## Maintainer publish workflow
 
 1. Make plugin changes.
@@ -67,6 +80,31 @@ claude plugin marketplace update nikolareljin-plugins
 claude plugin update claude-docsmith@nikolareljin-plugins
 ```
 
+## Submit to Anthropic's official plugin directory
+
+Your own GitHub-hosted marketplace is enough for self-distribution and team/community use, but Anthropic also documents a separate submission path for inclusion in the official directory.
+
+Anthropic’s documented submission endpoints are:
+
+- `https://claude.ai/settings/plugins/submit`
+- `https://platform.claude.com/plugins/submit`
+
+Anthropic says you can submit either:
+
+- a GitHub repository link
+- or a zip file containing the plugin and its folder structure
+
+For this repository, the preferred submission target is:
+
+- `https://github.com/nikolareljin/claude-docsmith`
+
+Notes from Anthropic’s docs:
+
+- the official directory appears in Claude Code as `claude-plugins-official`
+- plugin submissions undergo automated review
+- plugins may later receive an `Anthropic Verified` badge after additional review
+- every plugin update requires a new submission
+
 ## Local development
 
 For development, do not install from the marketplace repeatedly. Use:
@@ -87,6 +125,7 @@ Then reload changes inside Claude Code with:
 - The marketplace name is `nikolareljin-plugins`.
 - The plugin install id is `claude-docsmith@nikolareljin-plugins`.
 - This repository uses a GitHub plugin source in the marketplace entry, which is appropriate for GitHub-hosted distribution.
+- Inclusion in Anthropic’s official directory is separate from your own marketplace and requires submission through Anthropic’s form.
 
 ## Troubleshooting
 
