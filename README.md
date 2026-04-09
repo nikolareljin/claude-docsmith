@@ -75,6 +75,46 @@ During development, after changing the manifest, commands, or skills, reload the
 /reload-plugins
 ```
 
+## Install In Claude
+
+This repository is now both:
+
+- the plugin source repo
+- a GitHub-hosted Claude marketplace repo
+
+Add the marketplace from GitHub:
+
+```bash
+claude plugin marketplace add nikolareljin/claude-docsmith
+```
+
+Install the plugin from that marketplace:
+
+```bash
+claude plugin install claude-docsmith@nikolareljin-plugins
+```
+
+Useful variants:
+
+```bash
+claude plugin install claude-docsmith@nikolareljin-plugins --scope user
+claude plugin install claude-docsmith@nikolareljin-plugins --scope project
+claude plugin install claude-docsmith@nikolareljin-plugins --scope local
+```
+
+Inside an interactive Claude Code session, the equivalent commands are:
+
+```text
+/plugin marketplace add nikolareljin/claude-docsmith
+/plugin install claude-docsmith@nikolareljin-plugins
+```
+
+After installation, invoke the command with:
+
+```text
+/claude-docsmith:update-docs
+```
+
 Build the prompt pack for Claude Code with the helper CLI:
 
 ```bash
@@ -169,6 +209,51 @@ The manifest also aligns with the published schema categories from the plugin re
 - component path fields: `commands`, `skills`
 
 Reference: [Plugin manifest schema](https://code.claude.com/docs/en/plugins-reference#plugin-manifest-schema)
+
+This repository also includes a marketplace catalog at [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json), following Anthropic’s marketplace guidance for GitHub-hosted distribution.
+
+Reference: [Create and distribute a plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces)
+
+## Publish To Claude
+
+Based on Anthropic’s current docs, “publishing” means hosting a plugin marketplace and letting users add that marketplace to Claude Code. GitHub is the recommended hosting method.
+
+This repository is already set up for that flow:
+
+1. Push plugin changes to `main` in `nikolareljin/claude-docsmith`.
+2. Keep the plugin manifest in [`.claude-plugin/plugin.json`](./.claude-plugin/plugin.json).
+3. Keep the marketplace catalog in [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json).
+4. Validate before sharing:
+
+```bash
+claude plugin validate .
+```
+
+5. Users add the marketplace:
+
+```bash
+claude plugin marketplace add nikolareljin/claude-docsmith
+```
+
+6. Users install the plugin:
+
+```bash
+claude plugin install claude-docsmith@nikolareljin-plugins
+```
+
+7. After you publish updates, users refresh with:
+
+```bash
+claude plugin marketplace update nikolareljin-plugins
+claude plugin update claude-docsmith@nikolareljin-plugins
+```
+
+## What “publish” means here
+
+- There is no separate deployment artifact required for this GitHub flow.
+- The published unit is your GitHub repository plus `.claude-plugin/marketplace.json`.
+- Users install through a marketplace, not by pointing Claude directly at `plugin.json`.
+- For local development, keep using `claude --plugin-dir ./claude-docsmith`.
 
 ## Troubleshooting
 

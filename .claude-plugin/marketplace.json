@@ -1,0 +1,39 @@
+{
+  "name": "nikolareljin-plugins",
+  "owner": {
+    "name": "Nikola Reljin"
+  },
+  "metadata": {
+    "description": "Claude Code plugins published from the nikolareljin namespace.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "claude-docsmith",
+      "source": {
+        "source": "github",
+        "repo": "nikolareljin/claude-docsmith"
+      },
+      "description": "Generate user and developer documentation from a repository using Claude Code, with optional local Ollama fallback.",
+      "author": {
+        "name": "Nikola Reljin"
+      },
+      "homepage": "https://github.com/nikolareljin/claude-docsmith",
+      "repository": "https://github.com/nikolareljin/claude-docsmith",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "documentation",
+        "plugin",
+        "ollama",
+        "skill"
+      ],
+      "category": "Developer Tools",
+      "tags": [
+        "documentation",
+        "developer-experience",
+        "claude-code"
+      ]
+    }
+  ]
+}

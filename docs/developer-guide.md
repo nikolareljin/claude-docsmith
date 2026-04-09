@@ -29,6 +29,13 @@ Then inside Claude Code:
 /reload-plugins
 ```
 
+Install from the public GitHub marketplace repo:
+
+```bash
+claude plugin marketplace add nikolareljin/claude-docsmith
+claude plugin install claude-docsmith@nikolareljin-plugins
+```
+
 Run tests:
 
 ```bash
@@ -64,7 +71,8 @@ python3 -m build
 4. Smoke-test the CLI with `--dry-run`.
 5. Test the plugin with `claude --plugin-dir ./claude-docsmith`.
 6. Use `/reload-plugins` after plugin file changes.
-7. Validate one real repository in Claude Code, and optionally one local Ollama run.
+7. Validate marketplace and plugin metadata with `claude plugin validate .`.
+8. Validate one real repository in Claude Code, and optionally one local Ollama run.
 
 ## Debugging tips
 
