@@ -158,8 +158,17 @@ This repository follows the official Claude Code plugin pattern:
 - root-level `commands/` for namespaced slash commands
 - root-level `skills/` for model-invoked skills
 - local testing through `claude --plugin-dir ./claude-docsmith`
+- explicit manifest component paths use schema-compliant `./`-relative plugin-root paths
 
 Reference: [Create plugins](https://code.claude.com/docs/en/plugins)
+
+The manifest also aligns with the published schema categories from the plugin reference:
+
+- required field: `name`
+- metadata fields: `version`, `description`, `author`, `homepage`, `repository`, `license`, `keywords`
+- component path fields: `commands`, `skills`
+
+Reference: [Plugin manifest schema](https://code.claude.com/docs/en/plugins-reference#plugin-manifest-schema)
 
 ## Troubleshooting
 

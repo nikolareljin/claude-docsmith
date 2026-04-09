@@ -1,12 +1,21 @@
 {
   "name": "claude-docsmith",
-  "description": "Generate user and developer documentation from a repository using Claude Code, with optional local Ollama fallback.",
   "version": "0.1.0",
+  "description": "Generate user and developer documentation from a repository using Claude Code, with optional local Ollama fallback.",
   "author": {
     "name": "Nikola Reljin",
     "url": "https://github.com/nikolareljin"
   },
   "homepage": "https://github.com/nikolareljin/claude-docsmith",
   "repository": "https://github.com/nikolareljin/claude-docsmith",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "documentation",
+    "plugin",
+    "ollama",
+    "skill"
+  ],
+  "commands": "./commands/",
+  "skills": "./skills/"
 }
