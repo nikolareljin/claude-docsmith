@@ -36,6 +36,8 @@ claude plugin marketplace add nikolareljin/claude-docsmith
 claude plugin install claude-docsmith@nikolareljin-plugins
 ```
 
+See [`docs/publishing.md`](./publishing.md) for the full publish and update workflow.
+
 Run tests:
 
 ```bash
@@ -89,3 +91,5 @@ pip install -e .
 pytest
 python3 -m compileall src
 ```
+
+For release/publish steps, use [`docs/publishing.md`](./publishing.md).

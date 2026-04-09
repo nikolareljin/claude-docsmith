@@ -115,6 +115,70 @@ After installation, invoke the command with:
 /claude-docsmith:update-docs
 ```
 
+### Recommended install flow
+
+For most users, the cleanest path is:
+
+1. Add the GitHub-hosted marketplace:
+
+```bash
+claude plugin marketplace add nikolareljin/claude-docsmith
+```
+
+2. Install the plugin from that marketplace:
+
+```bash
+claude plugin install claude-docsmith@nikolareljin-plugins
+```
+
+3. Start Claude Code in your target repository and run:
+
+```text
+/claude-docsmith:update-docs
+```
+
+4. If you update the plugin and want Claude Code to pick up the changes in a running session:
+
+```text
+/reload-plugins
+```
+
+### Install scopes
+
+Choose the scope that matches how you want Claude to see the plugin:
+
+- `--scope user`: available across all your projects
+- `--scope project`: shared through project config
+- `--scope local`: only for your local checkout
+
+Examples:
+
+```bash
+claude plugin install claude-docsmith@nikolareljin-plugins --scope user
+claude plugin install claude-docsmith@nikolareljin-plugins --scope project
+claude plugin install claude-docsmith@nikolareljin-plugins --scope local
+```
+
+### Verify installation
+
+After installation, confirm Claude sees the plugin:
+
+```text
+/plugin
+```
+
+Then run:
+
+```text
+/claude-docsmith:update-docs
+```
+
+If the command does not appear, reload plugins:
+
+```text
+/reload-plugins
+```
+
 Build the prompt pack for Claude Code with the helper CLI:
 
 ```bash
@@ -247,6 +311,8 @@ claude plugin install claude-docsmith@nikolareljin-plugins
 claude plugin marketplace update nikolareljin-plugins
 claude plugin update claude-docsmith@nikolareljin-plugins
 ```
+
+See [docs/publishing.md](./docs/publishing.md) for the full maintainer workflow.
 
 ## What “publish” means here
 
