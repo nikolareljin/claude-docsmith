@@ -16,6 +16,19 @@ Run the CLI:
 claude-docsmith /path/to/repo --dry-run
 ```
 
+Test the Claude plugin locally:
+
+```bash
+claude --plugin-dir ./claude-docsmith
+```
+
+Then inside Claude Code:
+
+```text
+/claude-docsmith:update-docs
+/reload-plugins
+```
+
 Run tests:
 
 ```bash
@@ -49,7 +62,9 @@ python3 -m build
 2. Add or adjust unit tests.
 3. Run `pytest`.
 4. Smoke-test the CLI with `--dry-run`.
-5. Validate one real repository in Claude Code, and optionally one local Ollama run.
+5. Test the plugin with `claude --plugin-dir ./claude-docsmith`.
+6. Use `/reload-plugins` after plugin file changes.
+7. Validate one real repository in Claude Code, and optionally one local Ollama run.
 
 ## Debugging tips
 

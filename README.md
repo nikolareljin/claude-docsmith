@@ -69,6 +69,12 @@ Then invoke the namespaced command:
 /claude-docsmith:update-docs
 ```
 
+During development, after changing the manifest, commands, or skills, reload them without restarting Claude Code:
+
+```text
+/reload-plugins
+```
+
 Build the prompt pack for Claude Code with the helper CLI:
 
 ```bash
@@ -99,6 +105,8 @@ claude-docsmith /path/to/repo \
 Use Claude Code plus the bundled skill as the default execution path.
 
 Use the CLI when you want deterministic repository scanning, saved prompt packs, optional Ollama execution, or JSON apply support.
+
+The plugin namespace comes from the `name` field in [`.claude-plugin/plugin.json`](./.claude-plugin/plugin.json), so the command is intentionally namespaced as `/claude-docsmith:update-docs`.
 
 Recommended pattern:
 
@@ -141,6 +149,17 @@ claude-docsmith/
 ├── src/claude_docsmith/
 └── tests/
 ```
+
+## Claude plugin conformance
+
+This repository follows the official Claude Code plugin pattern:
+
+- plugin manifest at `.claude-plugin/plugin.json`
+- root-level `commands/` for namespaced slash commands
+- root-level `skills/` for model-invoked skills
+- local testing through `claude --plugin-dir ./claude-docsmith`
+
+Reference: [Create plugins](https://code.claude.com/docs/en/plugins)
 
 ## Troubleshooting
 

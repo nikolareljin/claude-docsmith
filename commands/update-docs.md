@@ -1,5 +1,3 @@
-# /claude-docsmith:update-docs
-
 Use the bundled `update-docs` skill from this plugin to refresh both user-facing and developer-facing documentation.
 
 Goals:
