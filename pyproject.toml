@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-docsmith"
+version = "0.1.0"
+description = "Generate user and developer documentation from a repository using Anthropic Claude or local Ollama models."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Nikola Reljin" }
+]
+keywords = ["claude-code", "documentation", "ollama", "anthropic", "plugin"]
+urls = { Homepage = "https://github.com/nikolareljin/claude-docsmith", Repository = "https://github.com/nikolareljin/claude-docsmith", Issues = "https://github.com/nikolareljin/claude-docsmith/issues" }
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12"
+]
+
+[project.scripts]
+claude-docsmith = "claude_docsmith.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2.2",
+  "pytest>=8.0"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

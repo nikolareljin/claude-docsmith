@@ -1,0 +1,104 @@
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import sys
+
+from .models import GenerationResult
+from .prompting import build_prompt
+from .providers import ProviderError, generate_text
+from .scanner import scan_repository
+
+
+def main() -> int:
+    parser = _build_parser()
+    args = parser.parse_args()
+
+    target_repo = Path(args.target_repo).resolve()
+    if not target_repo.exists():
+        parser.error(f"Target repository does not exist: {target_repo}")
+
+    project_root = Path(__file__).resolve().parents[2]
+    skill_root = project_root / "skills" / "update-docs"
+    snapshot = scan_repository(
+        target_repo,
+        max_files=args.max_files,
+        max_bytes_per_file=args.max_bytes_per_file,
+    )
+    prompt = build_prompt(snapshot, skill_root)
+
+    if args.dry_run:
+        print(prompt)
+        return 0
+
+    try:
+        response_text = generate_text(args.provider, args.model, prompt, timeout=args.timeout)
+        result = GenerationResult.from_json_text(response_text)
+    except (ProviderError, json.JSONDecodeError) as exc:
+        print(f"Generation failed: {exc}", file=sys.stderr)
+        return 1
+
+    if args.output_json:
+        output_path = Path(args.output_json)
+        output_path.write_text(_result_to_json(result), encoding="utf-8")
+
+    print(result.summary)
+    if result.open_questions:
+        print("\nOpen questions:")
+        for question in result.open_questions:
+            print(f"- {question}")
+
+    print("\nPlanned files:")
+    for item in result.files:
+        print(f"- {item.path} ({item.audience}, {item.action})")
+
+    if args.apply:
+        _apply_result(target_repo, result)
+
+    return 0
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Generate repository documentation updates with Claude or Ollama.")
+    parser.add_argument("target_repo", help="Path to the repository to document.")
+    parser.add_argument("--provider", choices=["anthropic", "ollama"], default="ollama")
+    parser.add_argument("--model", required=False, default="llama3.1")
+    parser.add_argument("--dry-run", action="store_true", help="Print the assembled prompt instead of calling a model.")
+    parser.add_argument("--apply", action="store_true", help="Write generated documentation files into the target repository.")
+    parser.add_argument("--output-json", help="Write the structured model output to a JSON file.")
+    parser.add_argument("--max-files", type=int, default=40)
+    parser.add_argument("--max-bytes-per-file", type=int, default=8000)
+    parser.add_argument("--timeout", type=int, default=180)
+    return parser
+
+
+def _apply_result(target_repo: Path, result: GenerationResult) -> None:
+    for item in result.files:
+        destination = (target_repo / item.path).resolve()
+        if not str(destination).startswith(str(target_repo)):
+            raise ValueError(f"Refusing to write outside target repository: {item.path}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(item.content.rstrip() + "\n", encoding="utf-8")
+
+
+def _result_to_json(result: GenerationResult) -> str:
+    payload = {
+        "summary": result.summary,
+        "files": [
+            {
+                "path": item.path,
+                "audience": item.audience,
+                "action": item.action,
+                "content": item.content,
+            }
+            for item in result.files
+        ],
+        "open_questions": result.open_questions,
+        "follow_up_docs": result.follow_up_docs,
+    }
+    return json.dumps(payload, indent=2)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

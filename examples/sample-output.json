@@ -1,0 +1,23 @@
+{
+  "summary": "Updated the main README for end users and refreshed the developer guide with setup and test commands.",
+  "files": [
+    {
+      "path": "README.md",
+      "audience": "user",
+      "action": "update",
+      "content": "# Project Name\n\nUpdated user-facing documentation.\n"
+    },
+    {
+      "path": "docs/developer-guide.md",
+      "audience": "developer",
+      "action": "update",
+      "content": "# Developer Guide\n\nUpdated developer documentation.\n"
+    }
+  ],
+  "open_questions": [
+    "Deployment steps are still inferred from CI only."
+  ],
+  "follow_up_docs": [
+    "docs/api.md"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "claude-docsmith",
+  "version": "0.1.0",
+  "description": "Generate user and developer documentation from a repository using Anthropic Claude or local Ollama.",
+  "author": {
+    "name": "Nikola Reljin",
+    "url": "https://github.com/nikolareljin"
+  },
+  "homepage": "https://github.com/nikolareljin/claude-docsmith",
+  "repository": "https://github.com/nikolareljin/claude-docsmith",
+  "license": "MIT",
+  "keywords": ["documentation", "claude-code", "ollama", "anthropic", "developer-tools"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Claude Docsmith",
+    "shortDescription": "Refresh user and developer docs from the current codebase.",
+    "longDescription": "Scans repositories, applies the update-docs skill, and generates documentation updates using Anthropic Claude or local Ollama models.",
+    "developerName": "Nikola Reljin",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/nikolareljin/claude-docsmith",
+    "privacyPolicyURL": "https://github.com/nikolareljin/claude-docsmith/blob/main/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/nikolareljin/claude-docsmith/blob/main/TERMS.md",
+    "defaultPrompt": [
+      "Update the README and developer docs for this repository.",
+      "Inspect this repo and generate user and developer documentation separately.",
+      "Refresh installation, usage, troubleshooting, architecture, and contribution docs."
+    ],
+    "brandColor": "#1F6F5F"
+  }
+}
