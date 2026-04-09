@@ -12,7 +12,7 @@ Suggested local helper flow:
 
 ```bash
 claude-docsmith . --dry-run
-claude-docsmith . --provider anthropic --model claude-sonnet-4-5 --output-json docsmith-output.json
+claude-docsmith . --provider ollama --model llama3.1 --output-json docsmith-output.json
 ```
 
 The authoritative instructions for the workflow live in:

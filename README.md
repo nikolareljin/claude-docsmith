@@ -2,7 +2,7 @@
 
 `claude-docsmith` is a GitHub-ready repository for a documentation-focused Claude Code plugin and helper CLI.
 
-It packages an `update-docs` skill, Claude Code command wiring, and a small Python tool that scans a repository and asks either Anthropic Claude or a local Ollama model to produce two documentation tracks:
+It packages an `update-docs` skill, Claude Code command wiring, and a small Python tool that scans a repository and prepares repository context for Claude Code. If you want a fully local fallback, the CLI can also send the same prompt pack to Ollama.
 
 - plain user documentation
 - developer documentation
@@ -33,9 +33,9 @@ It also still fits if you use Ollama locally for generation.
   - scans the target repository
   - reads key docs and build metadata
   - builds a prompt pack from the codebase plus the skill definition
-  - calls either Anthropic Claude or local Ollama
-  - emits structured file updates
-  - optionally writes those files back to the target repo
+  - prints that prompt pack for Claude Code
+  - optionally calls local Ollama
+  - optionally writes model-produced documentation files back to the target repo
 
 ## Installation
 
@@ -50,31 +50,22 @@ pip install -e ".[dev]"
 ## Prerequisites
 
 - Python 3.10+
-- For Anthropic mode:
-  - `ANTHROPIC_API_KEY`
-- For Ollama mode:
+- Claude Code for the primary workflow
+- Optional Ollama fallback:
   - a local Ollama server running, typically at `http://127.0.0.1:11434`
   - a model already pulled locally
 
 ## Quick start
 
-Preview the prompt pack without calling a model:
+Build the prompt pack for Claude Code:
 
 ```bash
 claude-docsmith /path/to/repo --dry-run
 ```
 
-Generate documentation suggestions with Claude:
+Then use that prompt in Claude Code with the bundled `update-docs` skill.
 
-```bash
-export ANTHROPIC_API_KEY=your_key
-claude-docsmith /path/to/repo \
-  --provider anthropic \
-  --model claude-sonnet-4-5 \
-  --output-json docsmith-output.json
-```
-
-Generate with Ollama:
+If you want a fully local fallback, generate with Ollama:
 
 ```bash
 claude-docsmith /path/to/repo \
@@ -83,27 +74,26 @@ claude-docsmith /path/to/repo \
   --output-json docsmith-output.json
 ```
 
-Apply generated files into the target repository:
+Apply a JSON result that came back from Claude Code or Ollama:
 
 ```bash
 claude-docsmith /path/to/repo \
-  --provider ollama \
-  --model llama3.1 \
+  --input-json docsmith-output.json \
   --apply
 ```
 
 ## Common usage
 
-Use the CLI when you want deterministic repository scanning and a reusable automation entrypoint.
+Use Claude Code plus the bundled skill as the default execution path.
 
-Use the skill by itself when Claude Code is already editing the repository and only needs a disciplined documentation workflow.
+Use the CLI when you want deterministic repository scanning, saved prompt packs, optional Ollama execution, or JSON apply support.
 
 Recommended pattern:
 
 1. Run `claude-docsmith --dry-run` to inspect what context will be sent.
-2. Generate JSON output.
+2. Send that prompt to Claude Code with the `update-docs` skill, or run Ollama locally.
 3. Review the proposed file set.
-4. Re-run with `--apply` once the file targets look correct.
+4. Re-run with `--input-json ... --apply` once the file targets look correct.
 
 ## Output format
 
@@ -154,10 +144,6 @@ Confirm the daemon is running:
 curl http://127.0.0.1:11434/api/tags
 ```
 
-### Anthropic requests fail
-
-Check that `ANTHROPIC_API_KEY` is set and that the selected model is enabled for your account.
-
 ### The wrong docs are being targeted
 
 Use the generated JSON review step before `--apply`. The tool prefers existing docs, but final file choice is still model-driven.
@@ -178,12 +164,11 @@ Yes, when run locally against a checked-out repo.
 
 ### Does it require Claude?
 
-No. Anthropic Claude and local Ollama are both supported.
+Claude Code is the primary path. Ollama is an optional local fallback.
 
 ## Security
 
 - No credentials are stored in this repository.
-- `ANTHROPIC_API_KEY` is read from the local environment only at runtime.
 - Generated artifacts such as `docsmith-output.json` and `docsmith-preview.md` are ignored by git.
 - The CLI refuses to write outside the selected target repository.
 

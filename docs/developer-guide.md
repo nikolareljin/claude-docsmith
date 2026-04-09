@@ -30,7 +30,6 @@ python3 -m build
 
 ## Environment variables
 
-- `ANTHROPIC_API_KEY`: required for `--provider anthropic`
 - `OLLAMA_BASE_URL`: optional override, defaults to `http://127.0.0.1:11434`
 
 ## Project structure
@@ -38,7 +37,7 @@ python3 -m build
 - `src/claude_docsmith/cli.py`: CLI entrypoint and apply flow
 - `src/claude_docsmith/scanner.py`: repository scanning and file selection
 - `src/claude_docsmith/prompting.py`: prompt assembly and JSON instructions
-- `src/claude_docsmith/providers.py`: Anthropic and Ollama HTTP adapters
+- `src/claude_docsmith/providers.py`: optional Ollama HTTP adapter
 - `src/claude_docsmith/models.py`: shared dataclasses and JSON parsing
 - `skills/update-docs/`: reusable documentation skill and checklists
 - `.claude/commands/update-docs.md`: Claude Code command wrapper
@@ -50,7 +49,7 @@ python3 -m build
 2. Add or adjust unit tests.
 3. Run `pytest`.
 4. Smoke-test the CLI with `--dry-run`.
-5. Validate one real repository using either Anthropic or Ollama.
+5. Validate one real repository in Claude Code, and optionally one local Ollama run.
 
 ## Debugging tips
 

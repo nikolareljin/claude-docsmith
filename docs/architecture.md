@@ -1,6 +1,6 @@
 # Architecture
 
-`claude-docsmith` is intentionally small. The skill defines the documentation policy; the Python package provides repeatable context gathering and model invocation.
+`claude-docsmith` is intentionally small. The skill defines the documentation policy; the Python package provides repeatable context gathering plus an optional Ollama fallback.
 
 ## Flow
 
@@ -11,7 +11,7 @@
    - both documentation checklists
    - a compact repository inventory
    - excerpts from relevant files
-4. The provider sends one generation request to Anthropic or Ollama.
+4. Claude Code uses that prompt plus the bundled skill to generate structured JSON, or the optional Ollama adapter does it locally.
 5. The response parser expects structured JSON with file targets and contents.
 6. The apply step writes documentation files only when `--apply` is set.
 
@@ -21,6 +21,7 @@
 - JSON output contract: easier to review and safer to apply than free-form prose.
 - Read-first scanning: the model gets docs and code context together, so it can remove stale wording instead of only adding new text.
 - Existing-doc preference: prompt instructions tell the model to update current docs before creating new files.
+- Claude-first execution: the repository does not depend on direct Anthropic API calls or an `ANTHROPIC_API_KEY`.
 
 ## Boundaries
 

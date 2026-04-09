@@ -1,7 +1,7 @@
 {
   "name": "claude-docsmith",
   "version": "0.1.0",
-  "description": "Generate user and developer documentation from a repository using Anthropic Claude or local Ollama.",
+  "description": "Generate user and developer documentation from a repository using Claude Code, with optional local Ollama fallback.",
   "author": {
     "name": "Nikola Reljin",
     "url": "https://github.com/nikolareljin"
@@ -14,7 +14,7 @@
   "interface": {
     "displayName": "Claude Docsmith",
     "shortDescription": "Refresh user and developer docs from the current codebase.",
-    "longDescription": "Scans repositories, applies the update-docs skill, and generates documentation updates using Anthropic Claude or local Ollama models.",
+    "longDescription": "Scans repositories, applies the update-docs skill, and generates documentation updates through Claude Code, with optional local Ollama fallback.",
     "developerName": "Nikola Reljin",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],

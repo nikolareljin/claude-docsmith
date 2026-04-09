@@ -32,6 +32,21 @@ def main() -> int:
         print(prompt)
         return 0
 
+    if args.input_json:
+        try:
+            result = GenerationResult.from_json_text(Path(args.input_json).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Failed to read input JSON: {exc}", file=sys.stderr)
+            return 1
+        _print_result(result)
+        if args.apply:
+            _apply_result(target_repo, result)
+        return 0
+
+    if not args.provider:
+        print("No provider selected. Use --dry-run for Claude Code or --provider ollama for local generation.", file=sys.stderr)
+        return 1
+
     try:
         response_text = generate_text(args.provider, args.model, prompt, timeout=args.timeout)
         result = GenerationResult.from_json_text(response_text)
@@ -43,15 +58,7 @@ def main() -> int:
         output_path = Path(args.output_json)
         output_path.write_text(_result_to_json(result), encoding="utf-8")
 
-    print(result.summary)
-    if result.open_questions:
-        print("\nOpen questions:")
-        for question in result.open_questions:
-            print(f"- {question}")
-
-    print("\nPlanned files:")
-    for item in result.files:
-        print(f"- {item.path} ({item.audience}, {item.action})")
+    _print_result(result)
 
     if args.apply:
         _apply_result(target_repo, result)
@@ -60,13 +67,14 @@ def main() -> int:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Generate repository documentation updates with Claude or Ollama.")
+    parser = argparse.ArgumentParser(description="Build Claude-ready documentation prompts and optionally run local Ollama generation.")
     parser.add_argument("target_repo", help="Path to the repository to document.")
-    parser.add_argument("--provider", choices=["anthropic", "ollama"], default="ollama")
+    parser.add_argument("--provider", choices=["ollama"])
     parser.add_argument("--model", required=False, default="llama3.1")
     parser.add_argument("--dry-run", action="store_true", help="Print the assembled prompt instead of calling a model.")
     parser.add_argument("--apply", action="store_true", help="Write generated documentation files into the target repository.")
     parser.add_argument("--output-json", help="Write the structured model output to a JSON file.")
+    parser.add_argument("--input-json", help="Read a previously generated JSON result and optionally apply it.")
     parser.add_argument("--max-files", type=int, default=40)
     parser.add_argument("--max-bytes-per-file", type=int, default=8000)
     parser.add_argument("--timeout", type=int, default=180)
@@ -98,6 +106,18 @@ def _result_to_json(result: GenerationResult) -> str:
         "follow_up_docs": result.follow_up_docs,
     }
     return json.dumps(payload, indent=2)
+
+
+def _print_result(result: GenerationResult) -> None:
+    print(result.summary)
+    if result.open_questions:
+        print("\nOpen questions:")
+        for question in result.open_questions:
+            print(f"- {question}")
+
+    print("\nPlanned files:")
+    for item in result.files:
+        print(f"- {item.path} ({item.audience}, {item.action})")
 
 
 if __name__ == "__main__":
