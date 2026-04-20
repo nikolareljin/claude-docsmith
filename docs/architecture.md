@@ -11,7 +11,7 @@
    - both documentation checklists
    - a compact repository inventory
    - excerpts from relevant files
-4. Claude Code uses that prompt plus the bundled skill to generate structured JSON, or the optional Ollama adapter does it locally.
+4. Claude Code uses that prompt plus the bundled skill to generate structured JSON, or the CLI calls the Claude API (`--provider claude`) or a local Ollama server (`--provider ollama`).
 5. The response parser expects structured JSON with file targets and contents.
 6. The apply step writes documentation files only when `--apply` is set.
 
@@ -19,11 +19,11 @@ For Claude Code plugin usage, the plugin manifest in `.claude-plugin/plugin.json
 
 ## Design choices
 
-- Standard library only: keeps installation simple.
+- Minimal dependencies: `httpx` for HTTP providers; no other runtime dependencies.
 - JSON output contract: easier to review and safer to apply than free-form prose.
 - Read-first scanning: the model gets docs and code context together, so it can remove stale wording instead of only adding new text.
 - Existing-doc preference: prompt instructions tell the model to update current docs before creating new files.
-- Claude-first execution: the repository does not depend on direct Anthropic API calls or an `ANTHROPIC_API_KEY`.
+- Provider flexibility: Claude Code plugin (no API key needed), direct Claude API (`ANTHROPIC_API_KEY`), or local Ollama (`OLLAMA_BASE_URL`).
 
 ## Boundaries
 

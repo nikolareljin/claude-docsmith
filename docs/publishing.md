@@ -2,156 +2,151 @@
 
 ## Overview
 
-`claude-docsmith` is published to Claude Code through a GitHub-hosted marketplace.
+`claude-docsmith` is distributed through a GitHub-hosted Claude marketplace. This repository contains both the plugin itself and the marketplace catalog at `.claude-plugin/marketplace.json`.
 
-This repository contains both:
-
-- the plugin itself
-- the marketplace catalog at `.claude-plugin/marketplace.json`
-
-That means publishing a new plugin version is mostly a Git push plus validation.
+Publishing a new version is a branch, bump, PR, merge, and tag cycle.
 
 ## Files that matter
 
-- `.claude-plugin/plugin.json`: plugin manifest
-- `.claude-plugin/marketplace.json`: marketplace catalog
-- `commands/update-docs.md`: namespaced Claude command
-- `skills/update-docs/SKILL.md`: core skill behavior
+| File | Purpose |
+|------|---------|
+| `.claude-plugin/plugin.json` | Plugin manifest — version shown to Claude Code |
+| `.claude-plugin/marketplace.json` | Marketplace catalog — version shown in marketplace listing |
+| `commands/update-docs.md` | Namespaced Claude command entrypoint |
+| `skills/update-docs/SKILL.md` | Core skill behavior |
+| `pyproject.toml` | Python package version |
+| `src/claude_docsmith/__init__.py` | Python runtime version |
 
-## How users install it
+## How users install
 
-Users add the marketplace:
+Add the marketplace:
 
 ```bash
 claude plugin marketplace add nikolareljin/claude-docsmith
 ```
 
-Then install the plugin:
+Install the plugin:
 
 ```bash
 claude plugin install claude-docsmith@nikolareljin-plugins
 ```
 
-Users can also install interactively through the Claude plugin UI:
+Or interactively:
 
 ```text
 /plugin
 ```
 
-Then:
+1. Choose `Browse Plugins`.
+2. Add `nikolareljin/claude-docsmith` as a marketplace if not present.
+3. Select and install `claude-docsmith`.
 
-1. choose `Browse Plugins`
-2. add `nikolareljin/claude-docsmith` as a marketplace if it is not already present
-3. select `claude-docsmith`
-4. install it from the `nikolareljin-plugins` marketplace
+After a plugin update, users refresh with:
 
-## Maintainer publish workflow
+```bash
+claude plugin marketplace update nikolareljin-plugins
+claude plugin update claude-docsmith@nikolareljin-plugins
+```
 
-1. Make plugin changes.
-2. Update `version` in `.claude-plugin/plugin.json` when you want a visible release bump.
-3. Validate the marketplace and plugin metadata:
+## Maintainer release workflow
+
+1. Create a release branch:
+
+```bash
+git checkout -b release/X.Y.Z
+```
+
+2. Bump the version in all four places:
+   - `src/claude_docsmith/__init__.py`
+   - `pyproject.toml`
+   - `.claude-plugin/plugin.json`
+   - `.claude-plugin/marketplace.json`
+
+3. Update `CHANGELOG.md` if present.
+
+4. Validate the plugin manifest locally:
 
 ```bash
 claude plugin validate .
 ```
 
-4. Test locally:
+5. Test the plugin locally:
 
 ```bash
-claude --plugin-dir ./claude-docsmith
+claude --plugin-dir .
 ```
 
-5. Inside Claude Code, confirm the plugin loads:
+Inside Claude Code:
 
 ```text
 /claude-docsmith:update-docs
 ```
 
-6. Commit and push to `main`:
+6. Commit, push the branch, and open a PR against `main`:
 
 ```bash
-git push origin main
+git push -u origin release/X.Y.Z
+gh pr create --base main
 ```
 
-7. Users refresh their local marketplace and plugin copies:
+7. After the PR merges, tag `main`:
 
 ```bash
-claude plugin marketplace update nikolareljin-plugins
-claude plugin update claude-docsmith@nikolareljin-plugins
+git checkout main
+git pull
+git tag X.Y.Z
+git push origin X.Y.Z
 ```
 
 ## Submit to Anthropic's official plugin directory
 
-Your own GitHub-hosted marketplace is enough for self-distribution and team/community use, but Anthropic also documents a separate submission path for inclusion in the official directory.
+Your GitHub-hosted marketplace handles self-distribution. Anthropic also documents a separate path for inclusion in the official `claude-plugins-official` directory.
 
-Anthropic’s documented submission endpoints are:
+Submission endpoints:
 
 - `https://claude.ai/settings/plugins/submit`
 - `https://platform.claude.com/plugins/submit`
 
-Anthropic says you can submit either:
+You can submit either a GitHub repository link or a zip file. For this repository, submit:
 
-- a GitHub repository link
-- or a zip file containing the plugin and its folder structure
+```
+https://github.com/nikolareljin/claude-docsmith
+```
 
-For this repository, the preferred submission target is:
+Notes:
 
-- `https://github.com/nikolareljin/claude-docsmith`
-
-Notes from Anthropic’s docs:
-
-- the official directory appears in Claude Code as `claude-plugins-official`
-- plugin submissions undergo automated review
-- plugins may later receive an `Anthropic Verified` badge after additional review
-- every plugin update requires a new submission
+- The official directory appears in Claude Code as `claude-plugins-official`.
+- Submissions undergo automated review.
+- Plugins may later receive an `Anthropic Verified` badge.
+- Every update requires a new submission.
 
 ## Local development
 
-For development, do not install from the marketplace repeatedly. Use:
+Do not install from the marketplace during development. Use:
 
 ```bash
-claude --plugin-dir ./claude-docsmith
+claude --plugin-dir .
 ```
 
-Then reload changes inside Claude Code with:
+Reload changes without restarting:
 
 ```text
 /reload-plugins
 ```
-
-## Important notes
-
-- Users install through the marketplace, not by targeting `plugin.json` directly.
-- The marketplace name is `nikolareljin-plugins`.
-- The plugin install id is `claude-docsmith@nikolareljin-plugins`.
-- This repository uses a GitHub plugin source in the marketplace entry, which is appropriate for GitHub-hosted distribution.
-- Inclusion in Anthropic’s official directory is separate from your own marketplace and requires submission through Anthropic’s form.
 
 ## Troubleshooting
 
 ### Marketplace validates but install does not update
 
-Run:
-
 ```bash
 claude plugin marketplace update nikolareljin-plugins
 claude plugin update claude-docsmith@nikolareljin-plugins
 ```
 
-### Local changes are not visible during testing
+### Local changes are not visible
 
-Use:
+Run `/reload-plugins` inside Claude Code, or restart with `claude --plugin-dir .`.
 
-```text
-/reload-plugins
-```
+### The command does not appear
 
-or restart Claude Code with:
-
-```bash
-claude --plugin-dir ./claude-docsmith
-```
-
-### The command does not show up
-
-Check that the plugin manifest exists at `.claude-plugin/plugin.json` and that the command file exists at `commands/update-docs.md`.
+Check that `.claude-plugin/plugin.json` and `commands/update-docs.md` both exist and are valid.
