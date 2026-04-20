@@ -412,6 +412,19 @@ Claude Code is the primary path. Ollama is an optional local fallback.
 - Generated artifacts such as `docsmith-output.json` and `docsmith-preview.md` are ignored by git.
 - The CLI refuses to write outside the selected target repository.
 
+## Configuration
+
+Full flag reference, Ollama setup, and Claude API setup: [docs/configuration.md](./docs/configuration.md)
+
+## Demo
+
+Step-by-step walkthrough and screenshot guide: [docs/demo.md](./docs/demo.md)
+
 ## Developer notes
 
 See [docs/developer-guide.md](./docs/developer-guide.md) and [docs/architecture.md](./docs/architecture.md).
+
+## About
+
+Built and maintained by [Nikola Reljin](https://github.com/nikolareljin).
+See [ABOUT.md](./ABOUT.md) for contact and contribution links.

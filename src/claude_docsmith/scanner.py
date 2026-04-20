@@ -10,76 +10,135 @@ DOC_CANDIDATES = [
     "CLAUDE.md",
     "AGENTS.md",
     "COPILOT.md",
+    "ABOUT.md",
+    "CHANGELOG.md",
     "docs",
 ]
 
 CONFIG_CANDIDATES = [
     "package.json",
     "pyproject.toml",
+    "setup.py",
+    "requirements.txt",
     "Cargo.toml",
     "go.mod",
+    "composer.json",
+    "Gemfile",
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
+    "CMakeLists.txt",
     "Makefile",
+    "tsconfig.json",
+    ".eslintrc.json",
+    ".eslintrc.js",
+    "jest.config.js",
+    "jest.config.ts",
+    ".env.example",
+    "env.example",
     "docker-compose.yml",
     "docker-compose.yaml",
     "Dockerfile",
     ".github/workflows",
 ]
 
-SOURCE_DIR_NAMES = {"src", "app", "backend", "frontend", "cmd", "internal", "tests"}
-IGNORED_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", "dist", "build"}
+SOURCE_DIR_NAMES = {
+    "src", "app", "backend", "frontend", "cmd", "internal",
+    "lib", "pkg", "packages", "api", "services", "core",
+    "controllers", "handlers", "routes", "models", "views",
+    "tests", "test", "spec", "__tests__",
+}
+
+IGNORED_DIRS = {
+    ".git", "node_modules", ".venv", "venv", "__pycache__",
+    "dist", "build", "target", "vendor", ".next", ".nuxt",
+    "coverage", ".tox", "htmlcov", ".mypy_cache", ".pytest_cache",
+    "out", "bin", "obj",
+}
+
+_LANGUAGE_MANIFEST_MAP: dict[str, str] = {
+    "pyproject.toml": "python",
+    "setup.py": "python",
+    "requirements.txt": "python",
+    "package.json": "node",
+    "go.mod": "go",
+    "Cargo.toml": "rust",
+    "composer.json": "php",
+    "Gemfile": "ruby",
+    "pom.xml": "java",
+    "build.gradle": "java",
+    "build.gradle.kts": "java",
+    "CMakeLists.txt": "cpp",
+}
 
 
-def scan_repository(root: Path, max_files: int = 40, max_bytes_per_file: int = 8000) -> RepoSnapshot:
+def scan_repository(
+    root: Path,
+    max_files: int = 40,
+    max_bytes_per_file: int = 8000,
+    max_context_bytes: int = 128 * 1024,
+    skip_tests: bool = False,
+) -> RepoSnapshot:
     root = root.resolve()
     scanned_files: list[ScannedFile] = []
     inventory: list[str] = []
+    total_bytes = 0
+
+    def _add(path: Path, category: str) -> bool:
+        nonlocal total_bytes
+        if len(scanned_files) >= max_files:
+            return False
+        if skip_tests and category == "test":
+            return True
+        raw = path.read_bytes()[:max_bytes_per_file]
+        chunk = len(raw)
+        if total_bytes + chunk > max_context_bytes:
+            return False
+        total_bytes += chunk
+        text = raw.decode("utf-8", errors="replace")
+        rel = str(path.relative_to(root))
+        scanned_files.append(ScannedFile(path=rel, category=category, content=text))
+        inventory.append(rel)
+        return True
 
     for rel in DOC_CANDIDATES + CONFIG_CANDIDATES:
         path = root / rel
         if path.is_file():
-            scanned_files.append(_read_file(root, path, "doc-or-config", max_bytes_per_file))
-            inventory.append(_inventory_line(root, path))
+            if not _add(path, "doc-or-config"):
+                break
         elif path.is_dir():
             for child in sorted(path.rglob("*")):
-                if len(scanned_files) >= max_files:
-                    break
-                if _should_skip(child):
+                if _should_skip(child) or not child.is_file():
                     continue
-                if child.is_file():
-                    scanned_files.append(_read_file(root, child, "doc-or-config", max_bytes_per_file))
-                    inventory.append(_inventory_line(root, child))
+                if not _add(child, "doc-or-config"):
+                    break
 
-    if len(scanned_files) < max_files:
+    if len(scanned_files) < max_files and total_bytes < max_context_bytes:
         for child in sorted(root.rglob("*")):
-            if len(scanned_files) >= max_files:
-                break
             if _should_skip(child) or not child.is_file():
                 continue
             rel_parts = child.relative_to(root).parts
-            if not rel_parts:
+            if not rel_parts or rel_parts[0] not in SOURCE_DIR_NAMES:
                 continue
-            if rel_parts[0] not in SOURCE_DIR_NAMES:
-                continue
-            category = "test" if "tests" in rel_parts else "source"
-            scanned_files.append(_read_file(root, child, category, max_bytes_per_file))
-            inventory.append(_inventory_line(root, child))
+            category = "test" if any(p in {"tests", "test", "spec", "__tests__"} for p in rel_parts) else "source"
+            if not _add(child, category):
+                break
 
-    return RepoSnapshot(root=root, scanned_files=scanned_files, inventory=inventory)
-
-
-def _read_file(root: Path, path: Path, category: str, max_bytes_per_file: int) -> ScannedFile:
-    raw = path.read_bytes()[:max_bytes_per_file]
-    text = raw.decode("utf-8", errors="replace")
-    return ScannedFile(
-        path=str(path.relative_to(root)),
-        category=category,
-        content=text,
+    detected_language = _detect_language(root)
+    return RepoSnapshot(
+        root=root,
+        scanned_files=scanned_files,
+        inventory=inventory,
+        detected_language=detected_language,
+        total_bytes=total_bytes,
     )
 
 
-def _inventory_line(root: Path, path: Path) -> str:
-    relative = path.relative_to(root)
-    return str(relative)
+def _detect_language(root: Path) -> str:
+    for manifest, lang in _LANGUAGE_MANIFEST_MAP.items():
+        if (root / manifest).is_file():
+            return lang
+    return "unknown"
 
 
 def _should_skip(path: Path) -> bool:
