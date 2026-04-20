@@ -31,3 +31,13 @@ def test_apply_result_rejects_path_traversal(tmp_path: Path) -> None:
     result = _make_result("../../etc/passwd", "evil")
     with pytest.raises(ValueError, match="Refusing to write outside"):
         _apply_result(tmp_path, result)
+
+
+def test_apply_result_rejects_prefix_collision(tmp_path: Path) -> None:
+    # A sibling directory whose path shares the same string prefix as tmp_path
+    # (e.g. /tmp/abc vs /tmp/abcsibling) must be rejected, not accepted.
+    sibling = tmp_path.parent / (tmp_path.name + "sibling")
+    relative = Path("..") / sibling.name / "out.md"
+    result = _make_result(str(relative), "evil")
+    with pytest.raises(ValueError, match="Refusing to write outside"):
+        _apply_result(tmp_path, result)

@@ -55,8 +55,14 @@ def main() -> int:
         )
         return 1
 
+    _PROVIDER_DEFAULT_MODELS = {
+        "ollama": "llama3.1",
+        "claude": "claude-opus-4-6",
+    }
+    model = args.model or _PROVIDER_DEFAULT_MODELS.get(args.provider, "")
+
     try:
-        response_text = generate_text(args.provider, args.model, prompt, timeout=args.timeout)
+        response_text = generate_text(args.provider, model, prompt, timeout=args.timeout)
         result = GenerationResult.from_json_text(response_text)
     except (ProviderError, json.JSONDecodeError) as exc:
         print(f"Generation failed: {exc}", file=sys.stderr)
@@ -97,7 +103,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def _apply_result(target_repo: Path, result: GenerationResult) -> None:
     for item in result.files:
         destination = (target_repo / item.path).resolve()
-        if not str(destination).startswith(str(target_repo)):
+        if not destination.is_relative_to(target_repo):
             raise ValueError(f"Refusing to write outside target repository: {item.path}")
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(item.content.rstrip() + "\n", encoding="utf-8")
@@ -139,7 +145,7 @@ def _print_context_stats(snapshot: object, prompt: str) -> None:
     prompt_bytes = len(prompt.encode("utf-8"))
     approx_tokens = prompt_bytes // 4
     print("\n--- context stats ---")
-    print(f"files: {files}  content: {kb:.1f} KB  prompt: {prompt_bytes // 1024:.1f} KB  ~tokens: {approx_tokens:,}")
+    print(f"files: {files}  content: {kb:.1f} KB  prompt: {prompt_bytes / 1024:.1f} KB  ~tokens: {approx_tokens:,}")
     print(f"detected language: {lang}")
 
 
