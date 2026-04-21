@@ -44,6 +44,19 @@ def test_byte_limit_stops_scan(tmp_path: Path) -> None:
     assert snapshot.total_bytes <= 3000
 
 
+def test_byte_limit_uses_remaining_budget_for_smaller_follow_up_file(tmp_path: Path) -> None:
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "large.md").write_text("L" * 900, encoding="utf-8")
+    (tmp_path / "docs" / "small.md").write_text("small\n", encoding="utf-8")
+
+    snapshot = scan_repository(tmp_path, max_files=10, max_bytes_per_file=900, max_context_bytes=905)
+
+    scanned_paths = [item.path for item in snapshot.scanned_files]
+    assert "docs/large.md" in scanned_paths
+    assert "docs/small.md" in scanned_paths
+    assert snapshot.total_bytes == 905
+
+
 def test_skip_tests_excludes_test_files(tmp_path: Path) -> None:
     (tmp_path / "tests").mkdir()
     (tmp_path / "tests" / "test_foo.py").write_text("def test_foo(): pass\n", encoding="utf-8")
@@ -52,6 +65,29 @@ def test_skip_tests_excludes_test_files(tmp_path: Path) -> None:
     snapshot = scan_repository(tmp_path, skip_tests=True)
     categories = {f.category for f in snapshot.scanned_files}
     assert "test" not in categories
+
+
+def test_skip_tests_avoids_descending_into_test_directories(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_foo.py").write_text("def test_foo(): pass\n", encoding="utf-8")
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "main.py").write_text("pass\n", encoding="utf-8")
+
+    original_walk = __import__("os").walk
+
+    def fake_walk(root, topdown=True):  # type: ignore[no-untyped-def]
+        for current_root, dirnames, filenames in original_walk(root, topdown=topdown):
+            assert Path(current_root).name != "tests"
+            yield current_root, dirnames, filenames
+
+    monkeypatch.setattr("claude_docsmith.scanner.os.walk", fake_walk)
+
+    snapshot = scan_repository(tmp_path, skip_tests=True)
+
+    scanned_paths = {item.path for item in snapshot.scanned_files}
+    assert "src/main.py" in scanned_paths
+    assert not any(path.startswith("tests/") for path in scanned_paths)
 
 
 def test_ignored_dirs_skipped(tmp_path: Path) -> None:

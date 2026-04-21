@@ -50,6 +50,8 @@ SOURCE_DIR_NAMES = {
     "tests", "test", "spec", "__tests__",
 }
 
+TEST_DIR_NAMES = {"tests", "test", "spec", "__tests__"}
+
 IGNORED_DIRS = {
     ".git", "node_modules", ".venv", "venv", "__pycache__",
     "dist", "build", "target", "vendor", ".next", ".nuxt",
@@ -91,14 +93,15 @@ def scan_repository(
             return False
         if skip_tests and category == "test":
             return True
+        remaining_budget = max_context_bytes - total_bytes
+        if remaining_budget <= 0:
+            return False
         try:
             with path.open("rb") as fh:
-                raw = fh.read(max_bytes_per_file)
+                raw = fh.read(min(max_bytes_per_file, remaining_budget))
         except OSError:
             return True
         chunk = len(raw)
-        if total_bytes + chunk > max_context_bytes:
-            return False
         total_bytes += chunk
         text = raw.decode("utf-8", errors="replace")
         rel = str(path.relative_to(root))
@@ -113,7 +116,7 @@ def scan_repository(
                 break
         elif path.is_dir():
             budget_hit = False
-            for child in _walk_files(path):
+            for child in _walk_files(path, skip_tests=skip_tests):
                 if _should_skip(child, root) or not _is_safe_file(child, root):
                     continue
                 if not _add(child, "doc-or-config"):
@@ -123,13 +126,13 @@ def scan_repository(
                 break
 
     if len(scanned_files) < max_files and total_bytes < max_context_bytes:
-        for child in _walk_files(root):
+        for child in _walk_files(root, skip_tests=skip_tests):
             if _should_skip(child, root) or not _is_safe_file(child, root):
                 continue
             rel_parts = child.relative_to(root).parts
             if not rel_parts or rel_parts[0] not in SOURCE_DIR_NAMES:
                 continue
-            category = "test" if any(p in {"tests", "test", "spec", "__tests__"} for p in rel_parts) else "source"
+            category = "test" if any(p in TEST_DIR_NAMES for p in rel_parts) else "source"
             if not _add(child, category):
                 break
 
@@ -150,10 +153,14 @@ def _detect_language(root: Path) -> str:
     return "unknown"
 
 
-def _walk_files(root: Path):
+def _walk_files(root: Path, *, skip_tests: bool = False):
     for current_root, dirnames, filenames in os.walk(root, topdown=True):
         current_path = Path(current_root)
-        dirnames[:] = sorted(dirname for dirname in dirnames if dirname not in IGNORED_DIRS)
+        pruned_dirs = (
+            dirname for dirname in dirnames
+            if dirname not in IGNORED_DIRS and (not skip_tests or dirname not in TEST_DIR_NAMES)
+        )
+        dirnames[:] = sorted(pruned_dirs)
         filenames.sort()
         for filename in filenames:
             yield current_path / filename
