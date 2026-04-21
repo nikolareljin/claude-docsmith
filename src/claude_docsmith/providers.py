@@ -40,7 +40,10 @@ def _generate_ollama(model: str, prompt: str, timeout: int) -> str:
             continue
         if response.status_code != 200:
             raise ProviderError(f"Ollama returned HTTP {response.status_code}: {response.text[:200]}")
-        body = response.json()
+        try:
+            body = response.json()
+        except Exception as exc:
+            raise ProviderError(f"Ollama returned non-JSON response: {response.text[:200]}") from exc
         generated = body.get("response", "").strip()
         if not generated:
             raise ProviderError("Ollama returned an empty response.")
@@ -77,7 +80,10 @@ def _generate_claude(model: str, prompt: str, timeout: int) -> str:
             continue
         if response.status_code != 200:
             raise ProviderError(f"Claude API returned HTTP {response.status_code}: {response.text[:200]}")
-        body = response.json()
+        try:
+            body = response.json()
+        except Exception as exc:
+            raise ProviderError(f"Claude API returned non-JSON response: {response.text[:200]}") from exc
         try:
             text = body["content"][0]["text"].strip()
         except (KeyError, IndexError) as exc:

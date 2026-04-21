@@ -109,7 +109,7 @@ def scan_repository(
                 break
         elif path.is_dir():
             budget_hit = False
-            for child in path.rglob("*"):
+            for child in sorted(path.rglob("*")):
                 if _should_skip(child, root) or not child.is_file():
                     continue
                 if not _add(child, "doc-or-config"):
@@ -119,7 +119,7 @@ def scan_repository(
                 break
 
     if len(scanned_files) < max_files and total_bytes < max_context_bytes:
-        for child in root.rglob("*"):
+        for child in sorted(root.rglob("*")):
             if _should_skip(child, root) or not child.is_file():
                 continue
             rel_parts = child.relative_to(root).parts
