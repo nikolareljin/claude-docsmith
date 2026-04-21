@@ -96,7 +96,7 @@ claude-docsmith/
 
 ## CI
 
-CI uses reusable workflows pinned to `nikolareljin/ci-helpers@0.7.2`:
+CI uses reusable workflows from `nikolareljin/ci-helpers@production`:
 
 - **ci.yml**: runs on push and pull request. Runs lint (`ruff`) and tests (`pytest` + `compileall`).
 - **pr-gate.yml**: runs on pull request. Adds release tag validation for `release/X.Y.Z` branches.
