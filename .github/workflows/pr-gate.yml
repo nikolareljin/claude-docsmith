@@ -15,4 +15,4 @@ jobs:
       lint_command: "pip install -e '.[dev]' && ruff check src tests"
       test_command: "pip install -e '.[dev]' && pytest && python -m compileall src"
       check_release_tag: true
-      release_branch: "release/0.2.0"
+      release_branch: ${{ github.head_ref }}

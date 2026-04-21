@@ -90,7 +90,8 @@ def scan_repository(
             return False
         if skip_tests and category == "test":
             return True
-        raw = path.read_bytes()[:max_bytes_per_file]
+        with path.open("rb") as fh:
+            raw = fh.read(max_bytes_per_file)
         chunk = len(raw)
         if total_bytes + chunk > max_context_bytes:
             return False
@@ -107,15 +108,19 @@ def scan_repository(
             if not _add(path, "doc-or-config"):
                 break
         elif path.is_dir():
+            budget_hit = False
             for child in path.rglob("*"):
-                if _should_skip(child) or not child.is_file():
+                if _should_skip(child, root) or not child.is_file():
                     continue
                 if not _add(child, "doc-or-config"):
+                    budget_hit = True
                     break
+            if budget_hit:
+                break
 
     if len(scanned_files) < max_files and total_bytes < max_context_bytes:
         for child in root.rglob("*"):
-            if _should_skip(child) or not child.is_file():
+            if _should_skip(child, root) or not child.is_file():
                 continue
             rel_parts = child.relative_to(root).parts
             if not rel_parts or rel_parts[0] not in SOURCE_DIR_NAMES:
@@ -141,5 +146,5 @@ def _detect_language(root: Path) -> str:
     return "unknown"
 
 
-def _should_skip(path: Path) -> bool:
-    return any(part in IGNORED_DIRS for part in path.parts)
+def _should_skip(path: Path, root: Path) -> bool:
+    return any(part in IGNORED_DIRS for part in path.relative_to(root).parts)

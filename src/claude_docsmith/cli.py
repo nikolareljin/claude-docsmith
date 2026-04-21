@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import sys
 
-from .models import GenerationResult
+from .models import GenerationResult, RepoSnapshot
 from .prompting import build_prompt
 from .providers import ProviderError, generate_text
 from .scanner import scan_repository
@@ -138,10 +138,10 @@ def _print_result(result: GenerationResult) -> None:
         print(f"- {item.path} ({item.audience}, {item.action})")
 
 
-def _print_context_stats(snapshot: object, prompt: str) -> None:
-    kb = getattr(snapshot, "total_bytes", 0) / 1024
-    lang = getattr(snapshot, "detected_language", "unknown")
-    files = len(getattr(snapshot, "scanned_files", []))
+def _print_context_stats(snapshot: RepoSnapshot, prompt: str) -> None:
+    kb = snapshot.total_bytes / 1024
+    lang = snapshot.detected_language
+    files = len(snapshot.scanned_files)
     prompt_bytes = len(prompt.encode("utf-8"))
     approx_tokens = prompt_bytes // 4
     print("\n--- context stats ---")
