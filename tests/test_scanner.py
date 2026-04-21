@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from claude_docsmith.scanner import scan_repository
 
 
@@ -58,3 +60,19 @@ def test_ignored_dirs_skipped(tmp_path: Path) -> None:
     snapshot = scan_repository(tmp_path)
     scanned_paths = {item.path for item in snapshot.scanned_files}
     assert not any("node_modules" in p for p in scanned_paths)
+
+
+def test_symlinked_directory_outside_root_is_skipped(tmp_path: Path) -> None:
+    external_root = tmp_path.parent / f"{tmp_path.name}-external"
+    external_root.mkdir()
+    (external_root / "secret.md").write_text("do not scan\n", encoding="utf-8")
+
+    docs_link = tmp_path / "docs"
+    try:
+        docs_link.symlink_to(external_root, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+
+    snapshot = scan_repository(tmp_path, max_files=10, max_bytes_per_file=1024)
+    scanned_paths = {item.path for item in snapshot.scanned_files}
+    assert "docs/secret.md" not in scanned_paths

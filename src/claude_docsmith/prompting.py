@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from pathlib import Path
+from typing import Protocol
 
 from .models import RepoSnapshot
 
 
-def build_prompt(snapshot: RepoSnapshot, skill_root: Path, skip_checklists: bool = False) -> str:
-    skill_text = (skill_root / "SKILL.md").read_text(encoding="utf-8")
+class SkillRoot(Protocol):
+    def joinpath(self, *pathsegments: str) -> "SkillRoot": ...
+    def read_text(self, encoding: str = "utf-8") -> str: ...
+
+
+def build_prompt(snapshot: RepoSnapshot, skill_root: SkillRoot, skip_checklists: bool = False) -> str:
+    skill_text = skill_root.joinpath("SKILL.md").read_text(encoding="utf-8")
 
     sections = [
         "You are generating repository documentation updates.",
@@ -18,8 +23,8 @@ def build_prompt(snapshot: RepoSnapshot, skill_root: Path, skip_checklists: bool
     ]
 
     if not skip_checklists:
-        user_checklist = (skill_root / "templates/user-doc-checklist.md").read_text(encoding="utf-8")
-        developer_checklist = (skill_root / "templates/developer-doc-checklist.md").read_text(encoding="utf-8")
+        user_checklist = skill_root.joinpath("templates", "user-doc-checklist.md").read_text(encoding="utf-8")
+        developer_checklist = skill_root.joinpath("templates", "developer-doc-checklist.md").read_text(encoding="utf-8")
         sections += [
             "User documentation checklist:",
             user_checklist,

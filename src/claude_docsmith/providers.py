@@ -35,9 +35,11 @@ def _generate_ollama(model: str, prompt: str, timeout: int) -> str:
             )
         except Exception as exc:
             raise ProviderError(f"Ollama request failed: {exc}") from exc
-        if response.status_code in _RETRY_STATUSES and attempt < _MAX_RETRIES:
-            time.sleep(_RETRY_DELAY)
-            continue
+        if response.status_code in _RETRY_STATUSES:
+            if attempt < _MAX_RETRIES:
+                time.sleep(_RETRY_DELAY)
+                continue
+            break
         if response.status_code != 200:
             raise ProviderError(f"Ollama returned HTTP {response.status_code}: {response.text[:200]}")
         try:
@@ -75,9 +77,11 @@ def _generate_claude(model: str, prompt: str, timeout: int) -> str:
             )
         except Exception as exc:
             raise ProviderError(f"Claude API request failed: {exc}") from exc
-        if response.status_code in _RETRY_STATUSES and attempt < _MAX_RETRIES:
-            time.sleep(_RETRY_DELAY)
-            continue
+        if response.status_code in _RETRY_STATUSES:
+            if attempt < _MAX_RETRIES:
+                time.sleep(_RETRY_DELAY)
+                continue
+            break
         if response.status_code != 200:
             raise ProviderError(f"Claude API returned HTTP {response.status_code}: {response.text[:200]}")
         try:

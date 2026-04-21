@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from claude_docsmith.cli import _apply_result
+from claude_docsmith.cli import _apply_result, _resolve_skill_root
 from claude_docsmith.models import GeneratedFile, GenerationResult
 
 
@@ -41,3 +41,9 @@ def test_apply_result_rejects_prefix_collision(tmp_path: Path) -> None:
     result = _make_result(str(relative), "evil")
     with pytest.raises(ValueError, match="Refusing to write outside"):
         _apply_result(tmp_path, result)
+
+
+def test_resolve_skill_root_uses_packaged_resources() -> None:
+    skill_root = _resolve_skill_root()
+    skill_text = skill_root.joinpath("SKILL.md").read_text(encoding="utf-8")
+    assert "Update Docs Skill" in skill_text

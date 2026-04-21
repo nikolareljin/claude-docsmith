@@ -152,9 +152,14 @@ def _should_skip(path: Path, root: Path) -> bool:
 
 def _is_safe_file(path: Path, root: Path) -> bool:
     """Return True only if path is a regular file that resolves within root."""
-    if path.is_symlink():
-        try:
-            path.resolve().relative_to(root)
-        except ValueError:
-            return False
-    return path.is_file()
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return False
+
+    try:
+        resolved.relative_to(root)
+    except ValueError:
+        return False
+
+    return resolved.is_file()

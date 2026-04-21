@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import argparse
+from importlib import resources
 import json
 from pathlib import Path
 import sys
+from typing import Protocol
 
 from .models import GenerationResult, RepoSnapshot
 from .prompting import build_prompt
 from .providers import ProviderError, generate_text
 from .scanner import scan_repository
+
+
+class SkillRoot(Protocol):
+    def joinpath(self, *pathsegments: str) -> "SkillRoot": ...
+    def read_text(self, encoding: str = "utf-8") -> str: ...
 
 
 def main() -> int:
@@ -19,9 +26,6 @@ def main() -> int:
     if not target_repo.exists():
         parser.error(f"Target repository does not exist: {target_repo}")
 
-    project_root = Path(__file__).resolve().parents[2]
-    skill_root = project_root / "skills" / "update-docs"
-
     snapshot = scan_repository(
         target_repo,
         max_files=args.max_files,
@@ -30,6 +34,7 @@ def main() -> int:
         skip_tests=args.skip_tests,
     )
 
+    skill_root = _resolve_skill_root()
     prompt = build_prompt(snapshot, skill_root, skip_checklists=args.skip_checklists)
 
     if args.dry_run:
@@ -78,6 +83,10 @@ def main() -> int:
         _apply_result(target_repo, result)
 
     return 0
+
+
+def _resolve_skill_root() -> SkillRoot:
+    return resources.files("claude_docsmith").joinpath("resources", "update-docs")
 
 
 def _build_parser() -> argparse.ArgumentParser:

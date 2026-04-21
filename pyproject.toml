@@ -43,5 +43,11 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+claude_docsmith = [
+  "resources/update-docs/SKILL.md",
+  "resources/update-docs/templates/*.md",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
