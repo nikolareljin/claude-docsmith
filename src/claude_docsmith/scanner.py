@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from .models import RepoSnapshot, ScannedFile
@@ -90,8 +91,11 @@ def scan_repository(
             return False
         if skip_tests and category == "test":
             return True
-        with path.open("rb") as fh:
-            raw = fh.read(max_bytes_per_file)
+        try:
+            with path.open("rb") as fh:
+                raw = fh.read(max_bytes_per_file)
+        except OSError:
+            return True
         chunk = len(raw)
         if total_bytes + chunk > max_context_bytes:
             return False
@@ -109,7 +113,7 @@ def scan_repository(
                 break
         elif path.is_dir():
             budget_hit = False
-            for child in sorted(path.rglob("*")):
+            for child in _walk_files(path):
                 if _should_skip(child, root) or not _is_safe_file(child, root):
                     continue
                 if not _add(child, "doc-or-config"):
@@ -119,7 +123,7 @@ def scan_repository(
                 break
 
     if len(scanned_files) < max_files and total_bytes < max_context_bytes:
-        for child in sorted(root.rglob("*")):
+        for child in _walk_files(root):
             if _should_skip(child, root) or not _is_safe_file(child, root):
                 continue
             rel_parts = child.relative_to(root).parts
@@ -144,6 +148,15 @@ def _detect_language(root: Path) -> str:
         if (root / manifest).is_file():
             return lang
     return "unknown"
+
+
+def _walk_files(root: Path):
+    for current_root, dirnames, filenames in os.walk(root, topdown=True):
+        dirnames[:] = sorted(dirnames)
+        filenames.sort()
+        current_path = Path(current_root)
+        for filename in filenames:
+            yield current_path / filename
 
 
 def _should_skip(path: Path, root: Path) -> bool:

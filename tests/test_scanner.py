@@ -76,3 +76,26 @@ def test_symlinked_directory_outside_root_is_skipped(tmp_path: Path) -> None:
     snapshot = scan_repository(tmp_path, max_files=10, max_bytes_per_file=1024)
     scanned_paths = {item.path for item in snapshot.scanned_files}
     assert "docs/secret.md" not in scanned_paths
+
+
+def test_unreadable_file_is_skipped(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    unreadable = docs / "secret.md"
+    unreadable.write_text("secret\n", encoding="utf-8")
+    readable = docs / "guide.md"
+    readable.write_text("guide\n", encoding="utf-8")
+
+    original_open = Path.open
+
+    def fake_open(self: Path, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if self == unreadable:
+            raise PermissionError("permission denied")
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", fake_open)
+
+    snapshot = scan_repository(tmp_path, max_files=10, max_bytes_per_file=1024)
+    scanned_paths = {item.path for item in snapshot.scanned_files}
+    assert "docs/secret.md" not in scanned_paths
+    assert "docs/guide.md" in scanned_paths
