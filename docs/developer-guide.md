@@ -39,7 +39,7 @@ claude-docsmith /path/to/repo --dry-run
 Test the Claude plugin locally:
 
 ```bash
-claude --plugin-dir ./claude-docsmith
+claude --plugin-dir .
 ```
 
 Then inside Claude Code:
@@ -96,7 +96,7 @@ claude-docsmith/
 
 ## CI
 
-CI uses reusable workflows from `nikolareljin/ci-helpers@production`:
+CI uses reusable workflows pinned to `nikolareljin/ci-helpers@0.7.2`:
 
 - **ci.yml**: runs on push and pull request. Runs lint (`ruff`) and tests (`pytest` + `compileall`).
 - **pr-gate.yml**: runs on pull request. Adds release tag validation for `release/X.Y.Z` branches.

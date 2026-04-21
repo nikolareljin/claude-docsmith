@@ -152,9 +152,9 @@ def _detect_language(root: Path) -> str:
 
 def _walk_files(root: Path):
     for current_root, dirnames, filenames in os.walk(root, topdown=True):
-        dirnames[:] = sorted(dirnames)
-        filenames.sort()
         current_path = Path(current_root)
+        dirnames[:] = sorted(dirname for dirname in dirnames if dirname not in IGNORED_DIRS)
+        filenames.sort()
         for filename in filenames:
             yield current_path / filename
 

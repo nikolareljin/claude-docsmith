@@ -5,17 +5,11 @@ from importlib import resources
 import json
 from pathlib import Path
 import sys
-from typing import Protocol
 
 from .models import GenerationResult, RepoSnapshot
-from .prompting import build_prompt
+from .prompting import SkillRoot, build_prompt
 from .providers import ProviderError, generate_text
 from .scanner import scan_repository
-
-
-class SkillRoot(Protocol):
-    def joinpath(self, *pathsegments: str) -> "SkillRoot": ...
-    def read_text(self, encoding: str = "utf-8") -> str: ...
 
 
 def main() -> int:
