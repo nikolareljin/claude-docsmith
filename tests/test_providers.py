@@ -62,6 +62,24 @@ def test_generate_claude_malformed_response(monkeypatch: pytest.MonkeyPatch) -> 
         _generate_claude("claude-haiku-4-5-20251001", "prompt", timeout=5)
 
 
+def test_generate_claude_text_block_without_text_field(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    response = httpx.Response(200, json={"content": [{"type": "text"}]})
+    monkeypatch.setattr("claude_docsmith.providers.httpx.post", lambda *args, **kwargs: response)
+
+    with pytest.raises(ProviderError, match="no text content blocks"):
+        _generate_claude("claude-haiku-4-5-20251001", "prompt", timeout=5)
+
+
+def test_generate_claude_non_list_content_blocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    response = httpx.Response(200, json={"content": {"type": "text", "text": "hello"}})
+    monkeypatch.setattr("claude_docsmith.providers.httpx.post", lambda *args, **kwargs: response)
+
+    with pytest.raises(ProviderError, match="malformed content blocks"):
+        _generate_claude("claude-haiku-4-5-20251001", "prompt", timeout=5)
+
+
 def test_generate_claude_retries_on_429(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
     call_count = 0

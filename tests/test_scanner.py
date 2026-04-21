@@ -114,6 +114,29 @@ def test_symlinked_directory_outside_root_is_skipped(tmp_path: Path) -> None:
     assert "docs/secret.md" not in scanned_paths
 
 
+def test_symlinked_candidate_directory_outside_root_is_not_walked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    external_root = tmp_path.parent / f"{tmp_path.name}-external-docs"
+    external_root.mkdir()
+    docs_link = tmp_path / "docs"
+    try:
+        docs_link.symlink_to(external_root, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+
+    walked_roots: list[Path] = []
+    original_walk = __import__("os").walk
+
+    def fake_walk(root, *args, **kwargs):  # type: ignore[no-untyped-def]
+        walked_roots.append(Path(root).resolve())
+        yield from original_walk(root, *args, **kwargs)
+
+    monkeypatch.setattr("claude_docsmith.scanner.os.walk", fake_walk)
+
+    scan_repository(tmp_path, max_files=10, max_bytes_per_file=1024)
+
+    assert external_root.resolve() not in walked_roots
+
+
 def test_unreadable_file_is_skipped(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     docs = tmp_path / "docs"
     docs.mkdir()

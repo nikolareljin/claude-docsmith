@@ -12,6 +12,6 @@ def test_packaged_skill_resources_match_source_skill_files() -> None:
     assert packaged_files == source_files
 
     for relative_path in source_files:
-      assert (packaged_root / relative_path).read_text(encoding="utf-8") == (
-          source_root / relative_path
-      ).read_text(encoding="utf-8")
+        assert (packaged_root / relative_path).read_text(encoding="utf-8") == (
+            source_root / relative_path
+        ).read_text(encoding="utf-8")

@@ -114,7 +114,7 @@ def scan_repository(
         if _is_safe_file(path, root):
             if not _add(path, "doc-or-config"):
                 break
-        elif path.is_dir():
+        elif _is_safe_dir(path, root):
             budget_hit = False
             for child in _walk_files(path, skip_tests=skip_tests):
                 if _should_skip(child, root) or not _is_safe_file(child, root):
@@ -183,3 +183,18 @@ def _is_safe_file(path: Path, root: Path) -> bool:
         return False
 
     return resolved.is_file()
+
+
+def _is_safe_dir(path: Path, root: Path) -> bool:
+    """Return True only if path is a directory that resolves within root."""
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return False
+
+    try:
+        resolved.relative_to(root)
+    except ValueError:
+        return False
+
+    return resolved.is_dir()

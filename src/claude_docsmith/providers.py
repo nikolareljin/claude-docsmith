@@ -88,7 +88,16 @@ def _generate_claude(model: str, prompt: str, timeout: int) -> str:
             body = response.json()
         except Exception as exc:
             raise ProviderError(f"Claude API returned non-JSON response: {response.text[:200]}") from exc
-        text_parts = [b["text"] for b in body.get("content", []) if b.get("type") == "text"]
+        content_blocks = body.get("content", [])
+        if not isinstance(content_blocks, list):
+            raise ProviderError("Claude API returned malformed content blocks.")
+        text_parts = [
+            text
+            for block in content_blocks
+            if isinstance(block, dict) and block.get("type") == "text"
+            for text in [block.get("text")]
+            if isinstance(text, str) and text
+        ]
         if not text_parts:
             raise ProviderError("Claude API returned no text content blocks.")
         text = "".join(text_parts).strip()
