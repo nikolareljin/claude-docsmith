@@ -104,13 +104,13 @@ def scan_repository(
 
     for rel in DOC_CANDIDATES + CONFIG_CANDIDATES:
         path = root / rel
-        if path.is_file():
+        if _is_safe_file(path, root):
             if not _add(path, "doc-or-config"):
                 break
         elif path.is_dir():
             budget_hit = False
             for child in sorted(path.rglob("*")):
-                if _should_skip(child, root) or not child.is_file():
+                if _should_skip(child, root) or not _is_safe_file(child, root):
                     continue
                 if not _add(child, "doc-or-config"):
                     budget_hit = True
@@ -120,7 +120,7 @@ def scan_repository(
 
     if len(scanned_files) < max_files and total_bytes < max_context_bytes:
         for child in sorted(root.rglob("*")):
-            if _should_skip(child, root) or not child.is_file():
+            if _should_skip(child, root) or not _is_safe_file(child, root):
                 continue
             rel_parts = child.relative_to(root).parts
             if not rel_parts or rel_parts[0] not in SOURCE_DIR_NAMES:
@@ -148,3 +148,13 @@ def _detect_language(root: Path) -> str:
 
 def _should_skip(path: Path, root: Path) -> bool:
     return any(part in IGNORED_DIRS for part in path.relative_to(root).parts)
+
+
+def _is_safe_file(path: Path, root: Path) -> bool:
+    """Return True only if path is a regular file that resolves within root."""
+    if path.is_symlink():
+        try:
+            path.resolve().relative_to(root)
+        except ValueError:
+            return False
+    return path.is_file()

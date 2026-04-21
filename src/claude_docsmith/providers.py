@@ -84,10 +84,10 @@ def _generate_claude(model: str, prompt: str, timeout: int) -> str:
             body = response.json()
         except Exception as exc:
             raise ProviderError(f"Claude API returned non-JSON response: {response.text[:200]}") from exc
-        try:
-            text = body["content"][0]["text"].strip()
-        except (KeyError, IndexError) as exc:
-            raise ProviderError(f"Unexpected Claude API response shape: {exc}") from exc
+        text_parts = [b["text"] for b in body.get("content", []) if b.get("type") == "text"]
+        if not text_parts:
+            raise ProviderError("Claude API returned no text content blocks.")
+        text = "".join(text_parts).strip()
         if not text:
             raise ProviderError("Claude API returned an empty response.")
         return text

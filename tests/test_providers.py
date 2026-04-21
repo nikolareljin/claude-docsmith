@@ -58,7 +58,7 @@ def test_generate_claude_malformed_response(monkeypatch: pytest.MonkeyPatch) -> 
         return httpx.Response(200, json={"unexpected": "shape"})
 
     monkeypatch.setattr(httpx, "post", mock_post)
-    with pytest.raises(ProviderError, match="Unexpected Claude API response shape"):
+    with pytest.raises(ProviderError, match="no text content blocks"):
         _generate_claude("claude-haiku-4-5-20251001", "prompt", timeout=5)
 
 
