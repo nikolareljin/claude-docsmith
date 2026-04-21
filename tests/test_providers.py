@@ -98,6 +98,18 @@ def test_generate_claude_retries_on_429(monkeypatch: pytest.MonkeyPatch) -> None
     assert call_count == 2
 
 
+def test_generate_claude_raises_after_retry_budget_exhausted(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+
+    def mock_post(url: str, **kwargs: object) -> httpx.Response:
+        return httpx.Response(529, text="overloaded")
+
+    monkeypatch.setattr(httpx, "post", mock_post)
+    monkeypatch.setattr("claude_docsmith.providers._RETRY_DELAY", 0)
+    with pytest.raises(ProviderError, match="after retries"):
+        _generate_claude("claude-haiku-4-5-20251001", "prompt", timeout=5)
+
+
 # ── Ollama provider ──────────────────────────────────────────────────────────
 
 
@@ -118,15 +130,3 @@ def test_generate_ollama_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("claude_docsmith.providers._RETRY_DELAY", 0)
     with pytest.raises(ProviderError, match="after retries"):
         _generate_ollama("llama3.1", "prompt", timeout=5)
-
-
-def test_generate_claude_raises_after_retry_budget_exhausted(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-
-    def mock_post(url: str, **kwargs: object) -> httpx.Response:
-        return httpx.Response(529, text="overloaded")
-
-    monkeypatch.setattr(httpx, "post", mock_post)
-    monkeypatch.setattr("claude_docsmith.providers._RETRY_DELAY", 0)
-    with pytest.raises(ProviderError, match="after retries"):
-        _generate_claude("claude-haiku-4-5-20251001", "prompt", timeout=5)

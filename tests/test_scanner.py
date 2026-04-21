@@ -44,7 +44,7 @@ def test_byte_limit_stops_scan(tmp_path: Path) -> None:
     assert snapshot.total_bytes <= 3000
 
 
-def test_byte_limit_uses_remaining_budget_for_smaller_follow_up_file(tmp_path: Path) -> None:
+def test_byte_limit_truncates_follow_up_file_to_remaining_budget(tmp_path: Path) -> None:
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "large.md").write_text("L" * 900, encoding="utf-8")
     (tmp_path / "docs" / "small.md").write_text("small\n", encoding="utf-8")
