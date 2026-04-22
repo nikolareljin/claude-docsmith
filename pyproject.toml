@@ -4,11 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-docsmith"
-version = "0.1.0"
+version = "0.2.0"
 description = "Generate user and developer documentation from a repository using Claude Code, with optional local Ollama fallback."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+dependencies = [
+  "httpx>=0.27",
+]
 authors = [
   { name = "Nikola Reljin" }
 ]
@@ -30,7 +33,8 @@ claude-docsmith = "claude_docsmith.cli:main"
 [project.optional-dependencies]
 dev = [
   "build>=1.2.2",
-  "pytest>=8.0"
+  "pytest>=8.0",
+  "ruff>=0.4",
 ]
 
 [tool.setuptools]
@@ -38,6 +42,12 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+claude_docsmith = [
+  "resources/update-docs/SKILL.md",
+  "resources/update-docs/templates/*.md",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

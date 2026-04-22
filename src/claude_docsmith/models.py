@@ -17,6 +17,8 @@ class RepoSnapshot:
     root: Path
     scanned_files: list[ScannedFile]
     inventory: list[str]
+    detected_language: str = "unknown"
+    total_bytes: int = 0
 
 
 @dataclass(slots=True)

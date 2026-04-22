@@ -1,0 +1,18 @@
+name: PR Gate
+
+on:
+  pull_request:
+
+concurrency:
+  group: claude-docsmith-pr-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-gate:
+    uses: nikolareljin/ci-helpers/.github/workflows/pr-gate.yml@production
+    with:
+      python_version: "3.11"
+      lint_command: "pip install -e '.[dev]' && ruff check src tests"
+      test_command: "pip install -e '.[dev]' && pytest && python -m compileall src"
+      check_release_tag: true
+      release_branch: ${{ github.head_ref }}

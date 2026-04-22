@@ -1,6 +1,6 @@
 {
   "name": "claude-docsmith",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate user and developer documentation from a repository using Claude Code, with optional local Ollama fallback.",
   "author": {
     "name": "Nikola Reljin",

@@ -1,0 +1,4 @@
+[submodule "vendor/script-helpers"]
+	path = vendor/script-helpers
+	url = https://github.com/nikolareljin/script-helpers.git
+	branch = production
