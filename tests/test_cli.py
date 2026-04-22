@@ -27,6 +27,13 @@ def test_apply_result_adds_trailing_newline(tmp_path: Path) -> None:
     assert (tmp_path / "out.md").read_text(encoding="utf-8").endswith("\n")
 
 
+def test_apply_result_accepts_relative_target_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = _make_result("docs/out.md", "# Hello\n")
+    _apply_result(Path("."), result)
+    assert (tmp_path / "docs" / "out.md").read_text(encoding="utf-8").startswith("# Hello")
+
+
 def test_apply_result_rejects_path_traversal(tmp_path: Path) -> None:
     result = _make_result("../../etc/passwd", "evil")
     with pytest.raises(ValueError, match="Refusing to write outside"):

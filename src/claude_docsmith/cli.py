@@ -104,6 +104,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _apply_result(target_repo: Path, result: GenerationResult) -> None:
+    target_repo = target_repo.resolve()
     for item in result.files:
         destination = (target_repo / item.path).resolve()
         if not destination.is_relative_to(target_repo):
