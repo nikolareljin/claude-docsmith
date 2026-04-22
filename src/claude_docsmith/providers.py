@@ -91,16 +91,17 @@ def _generate_claude(model: str, prompt: str, timeout: int) -> str:
         content_blocks = body.get("content", [])
         if not isinstance(content_blocks, list):
             raise ProviderError("Claude API returned malformed content blocks.")
-        saw_text_block = False
         text_parts: list[str] = []
         for block in content_blocks:
             if not isinstance(block, dict) or block.get("type") != "text":
                 continue
-            saw_text_block = True
             text = block.get("text")
             if isinstance(text, str):
                 text_parts.append(text)
-        if not saw_text_block:
+        if not text_parts and not any(
+            isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str)
+            for block in content_blocks
+        ):
             raise ProviderError("Claude API returned no text content blocks.")
         text = "".join(text_parts).strip()
         if not text:
