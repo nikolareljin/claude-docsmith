@@ -158,3 +158,35 @@ def test_unreadable_file_is_skipped(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     scanned_paths = {item.path for item in snapshot.scanned_files}
     assert "docs/secret.md" not in scanned_paths
     assert "docs/guide.md" in scanned_paths
+
+
+def test_inventory_paths_use_posix_separators(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    guide = docs / "guide.md"
+    guide.write_text("guide\n", encoding="utf-8")
+
+    original_relative_to = Path.relative_to
+
+    class FakeRelativePath:
+        def __init__(self, value: str) -> None:
+            self._value = value
+            self.parts = ("docs", "guide.md")
+
+        def as_posix(self) -> str:
+            return "docs/guide.md"
+
+        def __str__(self) -> str:
+            return self._value
+
+    def fake_relative_to(self: Path, *other):  # type: ignore[no-untyped-def]
+        if self == guide:
+            return FakeRelativePath("docs\\guide.md")
+        return original_relative_to(self, *other)
+
+    monkeypatch.setattr(Path, "relative_to", fake_relative_to)
+
+    snapshot = scan_repository(tmp_path, max_files=10, max_bytes_per_file=1024)
+
+    assert "docs/guide.md" in snapshot.inventory
+    assert "docs\\guide.md" not in snapshot.inventory

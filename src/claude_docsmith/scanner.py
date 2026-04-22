@@ -104,7 +104,7 @@ def scan_repository(
         chunk = len(raw)
         total_bytes += chunk
         text = raw.decode("utf-8", errors="replace")
-        rel = str(path.relative_to(root))
+        rel = path.relative_to(root).as_posix()
         scanned_files.append(ScannedFile(path=rel, category=category, content=text))
         inventory.append(rel)
         return True
