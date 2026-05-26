@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins published from the nikolareljin namespace.",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "plugins": [
     {
@@ -32,6 +32,35 @@
       "tags": [
         "documentation",
         "developer-experience",
+        "claude-code"
+      ]
+    },
+    {
+      "name": "nikolareljin/claude-reposec",
+      "source": {
+        "source": "github",
+        "repo": "nikolareljin/claude-reposec"
+      },
+      "description": "Deep security scanning for git repos: secrets, PII, vulnerabilities, git history, and dependency CVEs.",
+      "author": {
+        "name": "Nikola Reljin"
+      },
+      "homepage": "https://github.com/nikolareljin/claude-reposec",
+      "repository": "https://github.com/nikolareljin/claude-reposec",
+      "license": "MIT",
+      "keywords": [
+        "security",
+        "scanning",
+        "secrets",
+        "pii",
+        "vulnerabilities",
+        "claude-code"
+      ],
+      "category": "Security",
+      "tags": [
+        "security",
+        "scanning",
+        "git",
         "claude-code"
       ]
     }
