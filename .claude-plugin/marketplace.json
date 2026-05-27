@@ -36,7 +36,7 @@
       ]
     },
     {
-      "name": "nikolareljin/claude-reposec",
+      "name": "claude-reposec",
       "source": {
         "source": "github",
         "repo": "nikolareljin/claude-reposec"
