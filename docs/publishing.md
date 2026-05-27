@@ -21,15 +21,15 @@ Publishing a new version is a branch, bump, PR, merge, and tag cycle.
 Add the marketplace (one time, any Claude Code session):
 
 ```
-/plugin marketplace add github:nikolareljin/claude-plugins
+/plugin marketplace add nikolareljin/claude-plugins
 ```
 
-This registers the marketplace under the identifier `claude-plugins`.
+This registers the marketplace under the identifier `nikolareljin-plugins`.
 
 Install the plugin:
 
 ```
-/plugin install claude-docsmith@claude-plugins
+/plugin install claude-docsmith@nikolareljin-plugins
 ```
 
 Or interactively:
@@ -39,14 +39,14 @@ Or interactively:
 ```
 
 1. Choose `Browse Plugins`.
-2. Add `github:nikolareljin/claude-plugins` as a marketplace if not present.
+2. Add `nikolareljin/claude-plugins` as a marketplace if not present.
 3. Select and install `claude-docsmith`.
 
 After a plugin update, users refresh with:
 
 ```
-/plugin marketplace update claude-plugins
-/plugin update claude-docsmith@claude-plugins
+/plugin marketplace update nikolareljin-plugins
+/plugin update claude-docsmith@nikolareljin-plugins
 ```
 
 ## Maintainer release workflow
@@ -132,8 +132,8 @@ Reload changes without restarting:
 ### Marketplace validates but install does not update
 
 ```
-/plugin marketplace update claude-plugins
-/plugin update claude-docsmith@claude-plugins
+/plugin marketplace update nikolareljin-plugins
+/plugin update claude-docsmith@nikolareljin-plugins
 ```
 
 ### Local changes are not visible
