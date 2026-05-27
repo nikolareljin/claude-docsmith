@@ -55,7 +55,7 @@ After a plugin update, users refresh with:
 git checkout -b release/X.Y.Z
 ```
 
-2. Bump the version in all four places:
+2. Bump the version in all three places:
    - `src/claude_docsmith/__init__.py`
    - `pyproject.toml`
    - `.claude-plugin/plugin.json`
@@ -87,14 +87,7 @@ git push -u origin release/X.Y.Z
 gh pr create --base main
 ```
 
-7. After the PR merges, tag `main`:
-
-```bash
-git checkout main
-git pull
-git tag X.Y.Z
-git push origin X.Y.Z
-```
+7. After the PR merges, the `release-tag` CI workflow automatically creates and pushes the `X.Y.Z` tag from the merged release branch name. No manual tagging is needed.
 
 ## Submit to Anthropic's official plugin directory
 
@@ -136,9 +129,9 @@ Reload changes without restarting:
 
 ### Marketplace validates but install does not update
 
-```bash
-claude plugin marketplace update nikolareljin-plugins
-claude plugin update claude-docsmith@nikolareljin-plugins
+```
+/plugin marketplace update claude-plugins
+/plugin update claude-docsmith@claude-plugins
 ```
 
 ### Local changes are not visible
@@ -147,4 +140,4 @@ Run `/reload-plugins` inside Claude Code, or restart with `claude --plugin-dir .
 
 ### The command does not appear
 
-Check that `.claude-plugin/plugin.json` and `commands/update-docs.md` both exist and are valid.
+Check that `.claude-plugin/plugin.json` and `commands/nr-update-docs.md` both exist and are valid.
