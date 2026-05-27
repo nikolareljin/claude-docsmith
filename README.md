@@ -33,13 +33,13 @@ The intended workflow:
 **Step 1 — Add the marketplace** (one time, any Claude Code session):
 
 ```
-/plugin marketplace add nikolareljin-plugins github:nikolareljin/claude-plugins
+/plugin marketplace add nikolareljin/claude-plugins
 ```
 
 **Step 2 — Install the plugin:**
 
 ```
-/plugin install claude-docsmith@nikolareljin-plugins
+/plugin install claude-docsmith@claude-plugins
 ```
 
 **Step 3 — Restart Claude Code**, then run:
@@ -51,9 +51,9 @@ The intended workflow:
 ### Install scopes
 
 ```
-/plugin install claude-docsmith@nikolareljin-plugins --scope user     # all projects (default)
-/plugin install claude-docsmith@nikolareljin-plugins --scope project  # this project only
-/plugin install claude-docsmith@nikolareljin-plugins --scope local    # local only, not committed
+/plugin install claude-docsmith@claude-plugins --scope user     # all projects (default)
+/plugin install claude-docsmith@claude-plugins --scope project  # this project only
+/plugin install claude-docsmith@claude-plugins --scope local    # local only, not committed
 ```
 
 ### Verify installation
@@ -62,7 +62,7 @@ The intended workflow:
 /plugin
 ```
 
-The plugin should appear under `nikolareljin-plugins`. If the command does not appear after restart, run `/reload-plugins`.
+The plugin should appear under `claude-plugins`. If the command does not appear after restart, run `/reload-plugins`.
 
 ---
 

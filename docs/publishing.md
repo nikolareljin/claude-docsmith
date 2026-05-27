@@ -2,7 +2,7 @@
 
 ## Overview
 
-`claude-docsmith` is distributed through a GitHub-hosted Claude marketplace. This repository contains both the plugin itself and the marketplace catalog at `.claude-plugin/marketplace.json`.
+`claude-docsmith` is distributed through the `nikolareljin/claude-plugins` GitHub-hosted marketplace registry. This repository contains the plugin itself; the registry catalog lives at [github.com/nikolareljin/claude-plugins](https://github.com/nikolareljin/claude-plugins).
 
 Publishing a new version is a branch, bump, PR, merge, and tag cycle.
 
@@ -11,24 +11,23 @@ Publishing a new version is a branch, bump, PR, merge, and tag cycle.
 | File | Purpose |
 |------|---------|
 | `.claude-plugin/plugin.json` | Plugin manifest — version shown to Claude Code |
-| `.claude-plugin/marketplace.json` | Marketplace catalog — version shown in marketplace listing |
-| `commands/update-docs.md` | Namespaced Claude command entrypoint |
+| `commands/nr-update-docs.md` | Claude Code slash command entrypoint (`/nr-update-docs`) |
 | `skills/update-docs/SKILL.md` | Core skill behavior |
 | `pyproject.toml` | Python package version |
 | `src/claude_docsmith/__init__.py` | Python runtime version |
 
 ## How users install
 
-Add the marketplace:
+Add the marketplace (one time, any Claude Code session):
 
-```bash
-claude plugin marketplace add nikolareljin/claude-docsmith
+```
+/plugin marketplace add nikolareljin/claude-plugins
 ```
 
 Install the plugin:
 
-```bash
-claude plugin install claude-docsmith@nikolareljin-plugins
+```
+/plugin install claude-docsmith@claude-plugins
 ```
 
 Or interactively:
@@ -38,14 +37,14 @@ Or interactively:
 ```
 
 1. Choose `Browse Plugins`.
-2. Add `nikolareljin/claude-docsmith` as a marketplace if not present.
+2. Add `nikolareljin/claude-plugins` as a marketplace if not present.
 3. Select and install `claude-docsmith`.
 
 After a plugin update, users refresh with:
 
-```bash
-claude plugin marketplace update nikolareljin-plugins
-claude plugin update claude-docsmith@nikolareljin-plugins
+```
+/plugin marketplace update claude-plugins
+/plugin update claude-docsmith@claude-plugins
 ```
 
 ## Maintainer release workflow
@@ -60,7 +59,6 @@ git checkout -b release/X.Y.Z
    - `src/claude_docsmith/__init__.py`
    - `pyproject.toml`
    - `.claude-plugin/plugin.json`
-   - `.claude-plugin/marketplace.json`
 
 3. Update `CHANGELOG.md` if present.
 
@@ -79,7 +77,7 @@ claude --plugin-dir .
 Inside Claude Code:
 
 ```text
-/claude-docsmith:update-docs
+/nr-update-docs
 ```
 
 6. Commit, push the branch, and open a PR against `main`:
