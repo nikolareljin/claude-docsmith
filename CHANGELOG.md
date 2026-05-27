@@ -2,6 +2,34 @@
 
 All notable changes to claude-docsmith are documented here.
 
+## [1.0.0] - 2026-05-27
+
+### ⚠ BREAKING CHANGES
+
+- **Claude Code command renamed**: `/update-docs` → `/nr-update-docs`
+
+  Users who invoke the command directly must update their workflows. The standalone CLI
+  (`claude-docsmith`) and all skill files are unchanged.
+
+### Changed
+
+- Claude Code command file renamed from `commands/update-docs.md` to `commands/nr-update-docs.md`
+- Command now has a proper frontmatter header (`description`, `argument-hint`)
+- Marketplace registry moved from `claude-docsmith` repo to dedicated `nikolareljin/claude-plugins`
+- `plugin.json` no longer declares explicit `commands`/`skills` paths (auto-discovered from root)
+
+### Migration
+
+```
+# Old
+/update-docs
+
+# New
+/nr-update-docs
+```
+
+---
+
 ## [0.2.0] - 2026-04-21
 
 ### Added
@@ -62,5 +90,6 @@ Initial release.
 - Claude marketplace install instructions and publishing notes in README and `docs/publishing.md`
 - Plugin manifest aligned with official Claude plugin schema
 
+[1.0.0]: https://github.com/nikolareljin/claude-docsmith/compare/0.2.0...1.0.0
 [0.2.0]: https://github.com/nikolareljin/claude-docsmith/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/nikolareljin/claude-docsmith/releases/tag/0.1.0

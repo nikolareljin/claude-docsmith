@@ -1,3 +1,8 @@
+---
+description: Refresh user-facing and developer-facing documentation for the current repository
+argument-hint: "[--dry-run]"
+---
+
 Use the bundled `update-docs` skill from this plugin to refresh both user-facing and developer-facing documentation.
 
 Goals:
@@ -8,7 +13,7 @@ Goals:
 
 Recommended flow:
 
-1. Run `/claude-docsmith:update-docs` inside Claude Code when this plugin is loaded.
+1. Run `/nr-update-docs` inside Claude Code when this plugin is loaded.
 2. Let Claude inspect the target repository and apply the `skills/update-docs/SKILL.md` workflow.
 3. Optionally use the local helper CLI only for prompt-pack generation or Ollama fallback:
 
