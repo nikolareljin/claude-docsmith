@@ -8,9 +8,9 @@ This page walks through using `claude-docsmith` end-to-end. Screenshots show the
 
 ### Step 1 — Install the plugin
 
-```bash
-claude plugin marketplace add nikolareljin/claude-docsmith
-claude plugin install claude-docsmith@nikolareljin-plugins
+```
+/plugin marketplace add nikolareljin/claude-plugins
+/plugin install claude-docsmith@nikolareljin-plugins
 ```
 
 ![Plugin installation in terminal](screenshots/install.png)
@@ -27,7 +27,7 @@ claude
 Type the command in the Claude Code session:
 
 ```
-/claude-docsmith:update-docs
+/nr-update-docs
 ```
 
 Claude reads your repository structure, existing docs, config files, and source and proposes updated documentation.
@@ -97,7 +97,7 @@ Place them in `docs/screenshots/` as PNG files. Suggested filenames:
 | File | What to show |
 |------|-------------|
 | `install.png` | Plugin install command output |
-| `invoke.png` | `/claude-docsmith:update-docs` typed in Claude Code |
+| `invoke.png` | `/nr-update-docs` typed in Claude Code |
 | `review.png` | Claude listing proposed doc files |
 | `result.png` | Updated markdown file open in editor |
 
