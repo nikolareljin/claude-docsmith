@@ -21,8 +21,10 @@ Publishing a new version is a branch, bump, PR, merge, and tag cycle.
 Add the marketplace (one time, any Claude Code session):
 
 ```
-/plugin marketplace add nikolareljin/claude-plugins
+/plugin marketplace add github:nikolareljin/claude-plugins
 ```
+
+This registers the marketplace under the identifier `claude-plugins`.
 
 Install the plugin:
 
@@ -37,7 +39,7 @@ Or interactively:
 ```
 
 1. Choose `Browse Plugins`.
-2. Add `nikolareljin/claude-plugins` as a marketplace if not present.
+2. Add `github:nikolareljin/claude-plugins` as a marketplace if not present.
 3. Select and install `claude-docsmith`.
 
 After a plugin update, users refresh with:
