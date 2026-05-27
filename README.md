@@ -16,7 +16,7 @@ The intended workflow:
 ## What is included
 
 - A reusable `update-docs` skill under [`skills/update-docs`](./skills/update-docs)
-- A Claude Code command under [`commands/update-docs.md`](./commands/update-docs.md)
+- A Claude Code command under [`commands/nr-update-docs.md`](./commands/nr-update-docs.md)
 - An official Claude plugin manifest under [`.claude-plugin/plugin.json`](./.claude-plugin/plugin.json)
 - A Python CLI that:
   - scans the target repository
@@ -26,63 +26,86 @@ The intended workflow:
   - optionally calls the Claude API or local Ollama
   - optionally writes model-produced documentation files back to the target repo
 
-## Install
+---
 
-### From the Claude marketplace
+## Install as Claude Code Plugin
 
-```bash
-claude plugin marketplace add nikolareljin/claude-docsmith
-claude plugin install claude-docsmith@nikolareljin-plugins
+**Step 1 — Add the marketplace** (one time, any Claude Code session):
+
+```
+/plugin marketplace add nikolareljin-plugins github:nikolareljin/claude-plugins
 ```
 
-Or inside a Claude Code session:
+**Step 2 — Install the plugin:**
 
-```text
-/plugin marketplace add nikolareljin/claude-docsmith
+```
 /plugin install claude-docsmith@nikolareljin-plugins
+```
+
+**Step 3 — Restart Claude Code**, then run:
+
+```
+/nr-update-docs
 ```
 
 ### Install scopes
 
-```bash
-claude plugin install claude-docsmith@nikolareljin-plugins --scope user    # all projects
-claude plugin install claude-docsmith@nikolareljin-plugins --scope project # this project
-claude plugin install claude-docsmith@nikolareljin-plugins --scope local   # local only
 ```
-
-### From the Claude UI
-
-1. Open Claude Code and run `/plugin`.
-2. Choose `Browse Plugins`.
-3. Add the marketplace if not present: `/plugin marketplace add nikolareljin/claude-docsmith`
-4. Find `claude-docsmith` under `nikolareljin-plugins` and install it.
+/plugin install claude-docsmith@nikolareljin-plugins --scope user     # all projects (default)
+/plugin install claude-docsmith@nikolareljin-plugins --scope project  # this project only
+/plugin install claude-docsmith@nikolareljin-plugins --scope local    # local only, not committed
+```
 
 ### Verify installation
 
-```text
+```
 /plugin
-/claude-docsmith:update-docs
 ```
 
-If the command does not appear, run `/reload-plugins`.
+The plugin should appear under `nikolareljin-plugins`. If the command does not appear after restart, run `/reload-plugins`.
 
-## CLI installation
+---
+
+## Install the CLI (optional)
 
 The CLI is optional. Install it only if you want the prompt-pack generator or direct provider integration.
 
 **Prerequisites**: Python 3.10+
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install claude-docsmith
-```
-
-Or from source:
+**Linux / WSL (Ubuntu/Debian)**
 
 ```bash
-pip install -e "."
+# Option A: pipx (recommended — isolated, no system conflicts)
+pipx install claude-docsmith
+
+# Option B: user install
+pip install --user claude-docsmith
 ```
+
+> **pipx not installed?** `sudo apt install pipx` (Ubuntu 23.04+) or `pip install --user pipx`
+
+**macOS**
+
+```bash
+brew install pipx
+pipx install claude-docsmith
+```
+
+**From source**
+
+```bash
+git clone https://github.com/nikolareljin/claude-docsmith
+cd claude-docsmith
+pipx install -e "."
+```
+
+Verify:
+
+```bash
+claude-docsmith --help
+```
+
+---
 
 ## Quick start
 
@@ -95,8 +118,8 @@ claude
 
 Then:
 
-```text
-/claude-docsmith:update-docs
+```
+/nr-update-docs
 ```
 
 ### CLI with Claude API
@@ -135,6 +158,8 @@ claude-docsmith /path/to/repo --dry-run
 
 This prints the assembled prompt and a context stats footer showing file count, total KB, estimated token count, and detected language.
 
+---
+
 ## Common usage
 
 Use Claude Code plus the bundled skill as the default path.
@@ -147,6 +172,8 @@ Recommended pattern:
 2. Generate with `--provider claude` or `--provider ollama`.
 3. Review the proposed file set in the output JSON.
 4. Apply with `--input-json ... --apply` once the file targets look correct.
+
+---
 
 ## Output format
 
@@ -172,17 +199,20 @@ The model returns JSON:
 }
 ```
 
+---
+
 ## Repository layout
 
 ```text
 claude-docsmith/
 ├── .claude-plugin/plugin.json      plugin manifest
-├── .claude-plugin/marketplace.json GitHub marketplace catalog
-├── commands/update-docs.md         namespaced slash command
+├── commands/nr-update-docs.md      Claude Code slash command (/nr-update-docs)
 ├── skills/update-docs/             skill definition and checklists
 ├── src/claude_docsmith/            CLI source
 └── tests/                          unit tests
 ```
+
+---
 
 ## Troubleshooting
 
@@ -206,6 +236,8 @@ curl http://127.0.0.1:11434/api/tags
 
 Review the output JSON before using `--apply`. The tool prefers existing docs, but final file choice is model-driven.
 
+---
+
 ## FAQ
 
 ### Does this edit code?
@@ -224,11 +256,15 @@ Yes, when run locally against a checked-out repo.
 
 Only when using `--provider claude` (requires `ANTHROPIC_API_KEY`) or when Claude Code processes the prompt. Use `--provider ollama` with a local Ollama server for a fully offline workflow.
 
+---
+
 ## Security
 
 No credentials are stored in this repository. Runtime secrets (`ANTHROPIC_API_KEY`) are expected through environment variables only. The CLI refuses to write outside the selected target repository.
 
 See [SECURITY.md](./SECURITY.md) for the vulnerability reporting policy.
+
+---
 
 ## Configuration
 
