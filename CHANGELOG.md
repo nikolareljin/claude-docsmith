@@ -2,6 +2,18 @@
 
 All notable changes to claude-docsmith are documented here.
 
+## [1.0.1] - 2026-05-27
+
+### Fixed
+
+- `docs/publishing.md`: corrected marketplace source (`nikolareljin/claude-plugins`), slash-command syntax, version bump count (four → three), stale `commands/update-docs.md` reference, and old CLI-style troubleshooting commands
+- `docs/publishing.md`: removed manual tagging step (step 7) — superseded by `release-tag` CI workflow
+- `.github/workflows/release-tag.yml`: added `release-tag` workflow to auto-tag releases on merge to `main`
+
+[1.0.1]: https://github.com/nikolareljin/claude-docsmith/compare/1.0.0...1.0.1
+
+---
+
 ## [1.0.0] - 2026-05-27
 
 ### ⚠ BREAKING CHANGES

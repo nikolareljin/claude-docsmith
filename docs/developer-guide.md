@@ -45,15 +45,15 @@ claude --plugin-dir .
 Then inside Claude Code:
 
 ```text
-/claude-docsmith:update-docs
+/nr-update-docs
 /reload-plugins
 ```
 
 Install from the public GitHub marketplace repo:
 
-```bash
-claude plugin marketplace add nikolareljin/claude-docsmith
-claude plugin install claude-docsmith@nikolareljin-plugins
+```
+/plugin marketplace add nikolareljin/claude-plugins
+/plugin install claude-docsmith@nikolareljin-plugins
 ```
 
 See [`docs/publishing.md`](./publishing.md) for the full publish and update workflow.
@@ -78,10 +78,9 @@ Full configuration reference: [`docs/configuration.md`](./configuration.md)
 ```
 claude-docsmith/
 ├── .claude-plugin/plugin.json      official Claude Code plugin manifest
-├── .claude-plugin/marketplace.json GitHub-hosted marketplace catalog
 ├── .github/workflows/ci.yml        CI via ci-helpers python preset
 ├── .github/workflows/pr-gate.yml   PR gate via ci-helpers pr-gate preset
-├── commands/update-docs.md         namespaced Claude command entrypoint
+├── commands/nr-update-docs.md      namespaced Claude command entrypoint
 ├── docs/                           developer docs
 ├── skills/update-docs/             skill definition and checklists
 ├── src/claude_docsmith/
@@ -120,11 +119,10 @@ CI uses reusable workflows from `nikolareljin/ci-helpers@production`:
    - `src/claude_docsmith/__init__.py`
    - `pyproject.toml`
    - `.claude-plugin/plugin.json`
-   - `.claude-plugin/marketplace.json`
 3. Update `CHANGELOG.md`.
 4. Push branch and open PR against `main`.
-5. After merge, tag `main`: `git tag X.Y.Z && git push origin X.Y.Z`.
-6. Users update with: `claude plugin update claude-docsmith@nikolareljin-plugins`.
+5. After merge, the `release-tag` CI workflow automatically creates and pushes the `X.Y.Z` tag.
+6. Users update with: `/plugin update claude-docsmith@nikolareljin-plugins`.
 
 ## Debugging tips
 
