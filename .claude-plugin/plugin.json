@@ -15,7 +15,5 @@
     "plugin",
     "ollama",
     "skill"
-  ],
-  "commands": "./commands/",
-  "skills": "./skills/"
+  ]
 }
