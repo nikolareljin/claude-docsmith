@@ -2,7 +2,7 @@
 
 `claude-docsmith` is a Claude Code plugin for repository documentation, with an optional CLI for prompt-pack generation and local Ollama or Claude API fallback.
 
-It packages an `nr-update-docs` skill, Claude Code command wiring, and a Python tool that scans a repository and prepares context for documentation generation. The plugin generates:
+It packages an `update-docs` skill, Claude Code command wiring, and a Python tool that scans a repository and prepares context for documentation generation. The plugin generates:
 
 - plain user documentation
 - developer documentation
@@ -102,7 +102,7 @@ pipx install -e "."
 Verify:
 
 ```bash
-claude-docsmith --version
+claude-docsmith --help
 ```
 
 ---
@@ -129,7 +129,7 @@ export ANTHROPIC_API_KEY=sk-ant-...
 
 claude-docsmith /path/to/repo \
   --provider claude \
-  --model claude-sonnet-4-6 \
+  --model claude-opus-4-6 \
   --output-json docsmith-output.json
 
 claude-docsmith /path/to/repo \
