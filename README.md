@@ -62,7 +62,7 @@ The intended workflow:
 /plugin
 ```
 
-The plugin should appear under `claude-plugins`. If the command does not appear after restart, run `/reload-plugins`.
+The plugin should appear under `nikolareljin-plugins`. If the command does not appear after restart, run `/reload-plugins`.
 
 ---
 
