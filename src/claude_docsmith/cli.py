@@ -140,7 +140,9 @@ def _resolve_model(provider: str, explicit: str | None) -> str:
 
 
 def _resolve_skill_root() -> SkillRoot:
-    return resources.files("claude_docsmith").joinpath("resources", "update-docs")
+    # One segment per call: Traversable.joinpath only accepts multiple segments
+    # from Python 3.11, and this package supports 3.10.
+    return resources.files("claude_docsmith").joinpath("resources").joinpath("update-docs")
 
 
 def _build_parser() -> argparse.ArgumentParser:

@@ -43,8 +43,26 @@ All notable changes to claude-docsmith are documented here.
 - The `audience` field on generated files is now set from the track that produced the file
   rather than taken from the model's own label.
 
+### Fixed
+
+- **The package was broken on Python 3.10**, the version `requires-python` declares as the
+  floor. `_resolve_skill_root` called `Traversable.joinpath("resources", "update-docs")`, and
+  multiple path segments per call are only accepted from Python 3.11 — on 3.10 every run
+  raised `TypeError`. Now one segment per call, with a regression test that rejects
+  multi-segment usage.
+
 ### Build
 
+- Every runtime and dev dependency now carries an upper bound (`httpx>=0.27,<1.0`,
+  `ruff>=0.16,<0.17`, `pytest>=8.0,<10.0`, `build>=1.2.2,<2.0`, `setuptools>=68,<82`).
+  Dropped the redundant `wheel` build requirement. A test fails the build if an unbounded
+  requirement is added.
+- CI now runs the full matrix the classifiers advertise — 3.10, 3.11, 3.12 — instead of 3.11
+  alone, plus a `package` job that builds the sdist and wheel and smoke-tests the CLI
+  installed from each.
+- Added packaging guards: the version must agree across `pyproject.toml`, `plugin.json` and
+  `__init__.py`; the `requires-python` floor must match the lowest classifier; the
+  `package-data` globs must cover every packaged skill file.
 - Pinned the ruff rule set in `pyproject.toml` (`[tool.ruff.lint] select`) and raised the dev
   floor to `ruff>=0.16`. Relying on ruff's default rule set made CI fail on an unrelated commit
   the day 0.16 shipped and enabled `I`/`UP`/`ISC`/`C4` by default. Import blocks sorted and the
