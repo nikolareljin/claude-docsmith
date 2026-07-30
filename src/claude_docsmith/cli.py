@@ -217,7 +217,9 @@ def _run_check(target_repo: Path, docs_dir: str) -> int:
         skip_tests=stored.scan.skip_tests,
         redact_secrets=stored.scan.redact_secrets,
     )
-    current = manifest_module.source_hashes(snapshot, stored.docs_dir)
+    # docs_dir comes from the command line, not from the manifest: the file is
+    # untrusted, and a mismatched value there would report phantom drift.
+    current = manifest_module.source_hashes(snapshot, docs_dir)
     report = manifest_module.check_drift(target_repo, stored, current)
 
     if report.has_drift:
@@ -238,7 +240,12 @@ def _apply_result(
     snapshot: RepoSnapshot,
 ) -> None:
     target_repo = target_repo.resolve()
-    written: list[str] = []
+
+    # Validate and scrub every file before writing any of them. Interleaving the
+    # two means a rejected path halfway down the list leaves the earlier files
+    # already on disk, with no manifest and a traceback -- a half-updated
+    # documentation tree that neither --check nor the user can reason about.
+    planned: list[tuple[Path, str, str]] = []
     for item in result.files:
         audience = audiences.by_key(item.audience)
         if audience is None:
@@ -260,9 +267,13 @@ def _apply_result(
                     f"Redacted {len(findings)} credential-shaped value(s) from generated {item.path}.",
                     file=sys.stderr,
                 )
+        planned.append((destination, content, item.path))
+
+    written: list[str] = []
+    for destination, content, rel_path in planned:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(content.rstrip() + "\n", encoding="utf-8")
-        written.append(item.path)
+        written.append(rel_path)
 
     scan = manifest_module.ScanSettings(
         max_files=args.max_files,

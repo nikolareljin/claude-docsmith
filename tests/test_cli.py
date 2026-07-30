@@ -1,4 +1,5 @@
 import argparse
+import json
 from pathlib import Path
 
 import pytest
@@ -134,3 +135,55 @@ def test_resolve_skill_root_uses_packaged_resources() -> None:
     skill_root = _resolve_skill_root()
     skill_text = skill_root.joinpath("SKILL.md").read_text(encoding="utf-8")
     assert "Update Docs Skill" in skill_text
+
+
+def test_apply_writes_nothing_when_any_file_is_rejected(tmp_path: Path) -> None:
+    """Validation and writing must not interleave: one bad path partway down the
+    list would otherwise leave the earlier files on disk with no manifest."""
+    result = GenerationResult(
+        summary="",
+        files=[
+            GeneratedFile(path="docs/user/index.md", audience="user", action="create", content="ok\n"),
+            GeneratedFile(path="docs/user/two.md", audience="user", action="create", content="ok\n"),
+            GeneratedFile(path="../escape.md", audience="user", action="create", content="evil\n"),
+        ],
+    )
+    with pytest.raises(ValueError, match="Refusing to write outside"):
+        _apply_result(tmp_path, result, _args(), _snapshot(tmp_path))
+
+    assert not (tmp_path / "docs" / "user" / "index.md").exists()
+    assert not (tmp_path / "docs" / "user" / "two.md").exists()
+    assert not manifest_module.manifest_path(tmp_path, "docs").exists()
+
+
+def test_check_refuses_a_manifest_pointing_outside_the_repo(tmp_path: Path) -> None:
+    outside = tmp_path.parent / f"{tmp_path.name}-secret.txt"
+    outside.write_text("secret\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("# Test\n", encoding="utf-8")
+
+    path = manifest_module.manifest_path(tmp_path, "docs")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "tool_version": "1.1.0",
+                "generated_at": "2026-01-01T00:00:00Z",
+                "detected_language": "python",
+                "docs_dir": "docs",
+                "scan": {"max_files": 40, "max_bytes_per_file": 8000, "max_context_kb": 128, "skip_tests": False},
+                "tracks": {
+                    "user": {
+                        "root": "docs/user",
+                        "files": [{"path": str(outside), "sha256": "0" * 64}],
+                    }
+                },
+                "sources": [],
+                "redactions": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    # Exits as drift rather than reading the file outside the repository.
+    assert _run_check(tmp_path, "docs") == 1

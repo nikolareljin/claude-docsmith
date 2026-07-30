@@ -47,8 +47,30 @@ All notable changes to claude-docsmith are documented here.
 - The `audience` field on generated files is now set from the track that produced the file
   rather than taken from the model's own label.
 
+### Security
+
+- **`--check` treats the manifest as untrusted input.** `docs/.docsmith/manifest.json` lives
+  in the repository being checked, and `--check` is meant to be safe to run in CI against code
+  the operator does not control. Doc-entry paths were joined onto the repo root and read
+  directly, so an absolute path, a `..` segment or a symlink made the check stat and hash
+  files anywhere on the machine; missing or non-string keys raised an uncaught `KeyError`.
+  Paths are now resolved and confirmed to stay inside the repository, entries are type-checked,
+  and anything unusable is reported as drift under a new `invalid_entries` bucket instead of
+  being read.
+- **Scan settings replayed from the manifest are clamped.** `--check` fed `max_files`,
+  `max_bytes_per_file` and `max_context_kb` straight into the scanner, so a crafted value
+  turned a cheap offline check into reading the whole repository into memory. `--check` also
+  now takes `docs_dir` from the command line rather than from the file.
+- **A malformed manifest can no longer crash `read()`.** Non-dict payloads, wrong-typed
+  `tracks`/`sources`/`scan`/`redactions`, and non-string metadata are rejected or coerced
+  rather than raising.
+
 ### Fixed
 
+- **`--apply` no longer writes a partial documentation tree.** Validation and writing were
+  interleaved, so a rejected path partway down the file list left the earlier files on disk
+  with no manifest and a traceback. All files are now validated and scrubbed before any of
+  them is written.
 - **Build metadata directories are no longer scanned.** An editable install leaves
   `<package>.egg-info/` under `src/`, whose `PKG-INFO` duplicates the entire README into the
   prompt while its five sibling files consume scan slots that should go to source — on this
