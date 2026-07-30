@@ -6,7 +6,7 @@
 |------|------|---------|-------------|
 | `target_repo` | positional | — | Path to the repository to document |
 | `--provider` | `claude` \| `ollama` | none | AI provider to use for generation |
-| `--model` | string | see below | Model name for the selected provider |
+| `--model` | string | discovered | Model name. See model selection below |
 | `--audience` | `user` \| `developer` \| `both` | `both` | Which documentation track to generate. `both` makes one provider call per track |
 | `--docs-dir` | string | `docs` | Documentation root inside the target repo |
 | `--dry-run` | flag | off | Print the assembled prompt and context stats for each track; do not call a model |
@@ -24,12 +24,32 @@
 | `--timeout` | int | 300 | Request timeout in seconds |
 | `--version` | flag | — | Print the installed version and exit |
 
-### Default models
+### Model selection
 
-- `--provider claude`: `claude-opus-5`
-- `--provider ollama`: `llama3.1`
+No model name is hardcoded in the tool. A pinned default goes stale on every model
+release, and for Ollama it would name a model you may never have pulled. The model is
+resolved in this order, first match wins:
 
-Override with `--model <name>`.
+1. `--model <name>`
+2. `DOCSMITH_CLAUDE_MODEL` / `DOCSMITH_OLLAMA_MODEL` (per provider)
+3. `DOCSMITH_MODEL` (any provider)
+4. Whatever the provider reports it has:
+   - **Ollama** — `GET {OLLAMA_BASE_URL}/api/tags`, then the most recently modified
+     installed model (ties broken by name, so repeated runs are deterministic)
+   - **Claude** — `GET /v1/models`, then the newest by `created_at`
+
+When the model was not given explicitly, the resolved name is printed to stderr:
+
+```
+Using ollama model: qwen2.5:14b
+```
+
+If discovery cannot run — Ollama unreachable, nothing pulled, no API key — the tool
+exits 1 and tells you to pass `--model` or set the environment variable. It never
+guesses a name.
+
+Pin the model when you want reproducible output across runs; leave it unset when you
+want whatever is current or installed.
 
 ---
 
@@ -39,6 +59,9 @@ Override with `--model <name>`.
 |----------|----------|-------------|
 | `ANTHROPIC_API_KEY` | `claude` | Anthropic API key. Required when using `--provider claude` |
 | `OLLAMA_BASE_URL` | `ollama` | Ollama server base URL. Default: `http://127.0.0.1:11434` |
+| `DOCSMITH_CLAUDE_MODEL` | `claude` | Model to use for `--provider claude` when `--model` is not given |
+| `DOCSMITH_OLLAMA_MODEL` | `ollama` | Model to use for `--provider ollama` when `--model` is not given |
+| `DOCSMITH_MODEL` | both | Model for any provider. Lower precedence than the per-provider variables |
 
 ---
 
@@ -57,7 +80,12 @@ export ANTHROPIC_API_KEY=sk-ant-...
 ```bash
 claude-docsmith /path/to/repo \
   --provider claude \
-  --model claude-opus-5 \
+  --output-json docsmith-output.json
+
+# or pin the model for reproducible runs
+claude-docsmith /path/to/repo \
+  --provider claude \
+  --model <model-name> \
   --output-json docsmith-output.json
 ```
 
@@ -115,7 +143,7 @@ only reads a bounded file set and a model can echo a value it saw elsewhere.
 
 Findings record `path`, `line`, and `kind` only — never the value.
 
-**Model options**: `claude-opus-5` (best quality), `claude-sonnet-5` (faster, lower cost).
+List what your key can use with `curl https://api.anthropic.com/v1/models -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01"`. Opus-tier models give the best documentation quality; Sonnet-tier is faster and cheaper.
 
 ---
 
@@ -126,7 +154,8 @@ Findings record `path`, `line`, and `kind` only — never the value.
 2. Pull a model:
 
 ```bash
-ollama pull llama3.1
+ollama pull <model>       # e.g. a 14B+ instruct model
+ollama list               # what you already have
 ```
 
 3. Verify the daemon is running:
@@ -140,7 +169,6 @@ curl http://127.0.0.1:11434/api/tags
 ```bash
 claude-docsmith /path/to/repo \
   --provider ollama \
-  --model llama3.1 \
   --output-json docsmith-output.json
 ```
 
@@ -152,7 +180,9 @@ claude-docsmith /path/to/repo \
   --apply
 ```
 
-**Larger models produce better output.** Recommended: `llama3.3:70b`, `qwen2.5:72b`. Expect longer inference times; increase `--timeout` accordingly (e.g., `--timeout 1800`).
+With no `--model`, the most recently modified installed model is used and printed to
+stderr. **Larger models produce better output** — a 70B-class instruct model is a good
+target. Expect longer inference times; increase `--timeout` accordingly (e.g., `--timeout 1800`).
 
 **Custom server URL**:
 

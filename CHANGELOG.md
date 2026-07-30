@@ -29,7 +29,13 @@ All notable changes to claude-docsmith are documented here.
 
 ### Changed
 
-- Default Claude model is now `claude-opus-5` (was `claude-opus-4-6`).
+- **No model identifier is hardcoded any more.** A pinned default goes stale on every model
+  release, and for Ollama it named a model the user may never have pulled. The model is now
+  resolved as `--model` > `DOCSMITH_<PROVIDER>_MODEL` > `DOCSMITH_MODEL` > provider discovery
+  (`GET /api/tags` for Ollama, newest by `created_at` from `GET /v1/models` for Claude). The
+  resolved name is printed to stderr when it was not given explicitly; if discovery cannot
+  run the tool exits 1 with guidance rather than guessing.
+  A unit test fails the build if a model name reappears in `src/claude_docsmith/*.py`.
 - Claude API `max_tokens` raised from 8192 to 16000, and the default `--timeout` from 180 to
   300 seconds, to accommodate longer per-track responses.
 - `--dry-run` prints one prompt per selected track under an `=== AUDIENCE: <track> ===`

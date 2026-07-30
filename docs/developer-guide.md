@@ -72,6 +72,13 @@ python3 -m build
 |----------|-------------|
 | `ANTHROPIC_API_KEY` | Required when using `--provider claude` |
 | `OLLAMA_BASE_URL` | Override Ollama server URL. Default: `http://127.0.0.1:11434` |
+| `DOCSMITH_CLAUDE_MODEL` | Model for `--provider claude` when `--model` is not given |
+| `DOCSMITH_OLLAMA_MODEL` | Model for `--provider ollama` when `--model` is not given |
+| `DOCSMITH_MODEL` | Model for any provider; lower precedence than the per-provider variables |
+
+`tests/test_providers.py::test_no_model_identifier_is_hardcoded` fails the build if a
+model name is ever pinned in `src/claude_docsmith/*.py`. Resolution order lives in
+`cli._resolve_model`; discovery lives in `providers.discover_model`.
 
 Full configuration reference: [`docs/configuration.md`](./configuration.md)
 

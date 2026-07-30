@@ -51,10 +51,10 @@ Approve the proposed changes. Claude writes the updated documentation files into
 ## Workflow B: CLI with Claude API
 
 ```bash
-# Generate
+# Generate. With no --model, the newest model your key can see is used
+# and printed to stderr; add --model <name> to pin one.
 claude-docsmith /path/to/repo \
   --provider claude \
-  --model claude-opus-5 \
   --output-json docsmith-output.json
 
 # Review
@@ -71,13 +71,13 @@ claude-docsmith /path/to/repo \
 ## Workflow C: CLI with local Ollama
 
 ```bash
-# Start Ollama and pull a model
-ollama pull llama3.1
+# Start Ollama and make sure at least one model is pulled
+ollama list
 
-# Generate
+# Generate. With no --model, the most recently modified installed model
+# is used and printed to stderr; add --model <name> to pin one.
 claude-docsmith /path/to/repo \
   --provider ollama \
-  --model llama3.1 \
   --output-json docsmith-output.json
 
 # Apply

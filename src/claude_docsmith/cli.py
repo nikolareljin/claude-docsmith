@@ -3,13 +3,14 @@ from __future__ import annotations
 import argparse
 from importlib import resources
 import json
+import os
 from pathlib import Path
 import sys
 
 from . import __version__, audiences, manifest as manifest_module
 from .models import GenerationResult, RepoSnapshot
 from .prompting import SkillRoot, build_prompt
-from .providers import ProviderError, generate_text
+from .providers import ProviderError, discover_model, generate_text
 from .redaction import format_findings, redact
 from .scanner import scan_repository
 
@@ -79,7 +80,13 @@ def main() -> int:
         )
         return 1
 
-    model = args.model or _PROVIDER_DEFAULT_MODELS.get(args.provider, "")
+    try:
+        model = _resolve_model(args.provider, args.model)
+    except ProviderError as exc:
+        print(f"Could not determine a model: {exc}", file=sys.stderr)
+        return 1
+    if not args.model:
+        print(f"Using {args.provider} model: {model}", file=sys.stderr)
 
     merged = GenerationResult(summary="")
     summaries: list[str] = []
@@ -114,10 +121,21 @@ def main() -> int:
     return 0
 
 
-_PROVIDER_DEFAULT_MODELS = {
-    "ollama": "llama3.1",
-    "claude": "claude-opus-5",
-}
+def _resolve_model(provider: str, explicit: str | None) -> str:
+    """Resolve the model without pinning one in source.
+
+    Precedence: ``--model`` > ``DOCSMITH_<PROVIDER>_MODEL`` > ``DOCSMITH_MODEL`` >
+    whatever the provider reports it has. A hardcoded default would go stale on
+    every model release, and for Ollama it would name a model the user may never
+    have pulled.
+    """
+    if explicit:
+        return explicit
+    for variable in (f"DOCSMITH_{provider.upper()}_MODEL", "DOCSMITH_MODEL"):
+        value = os.environ.get(variable, "").strip()
+        if value:
+            return value
+    return discover_model(provider)
 
 
 def _resolve_skill_root() -> SkillRoot:
@@ -131,7 +149,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("target_repo", help="Path to the repository to document.")
     parser.add_argument("--version", action="version", version=f"claude-docsmith {__version__}")
     parser.add_argument("--provider", choices=["ollama", "claude"])
-    parser.add_argument("--model", required=False, default=None)
+    parser.add_argument(
+        "--model",
+        required=False,
+        default=None,
+        help=(
+            "Model name. Falls back to DOCSMITH_<PROVIDER>_MODEL, then DOCSMITH_MODEL, "
+            "then whatever the provider reports it has available."
+        ),
+    )
     parser.add_argument(
         "--audience",
         choices=list(audiences.CHOICES),

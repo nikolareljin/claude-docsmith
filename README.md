@@ -131,7 +131,6 @@ export ANTHROPIC_API_KEY=sk-ant-...
 
 claude-docsmith /path/to/repo \
   --provider claude \
-  --model claude-opus-5 \
   --output-json docsmith-output.json
 
 claude-docsmith /path/to/repo \
@@ -144,13 +143,26 @@ claude-docsmith /path/to/repo \
 ```bash
 claude-docsmith /path/to/repo \
   --provider ollama \
-  --model llama3.1 \
   --output-json docsmith-output.json
 
 claude-docsmith /path/to/repo \
   --input-json docsmith-output.json \
   --apply
 ```
+
+### Choosing a model
+
+No model name is baked into the tool. With no `--model`, it asks the provider what is
+available — the most recently modified installed Ollama model, or the newest model your
+Anthropic key can see — and prints what it picked:
+
+```
+Using ollama model: qwen2.5:14b
+```
+
+Override in order of precedence: `--model <name>`, then `DOCSMITH_CLAUDE_MODEL` /
+`DOCSMITH_OLLAMA_MODEL`, then `DOCSMITH_MODEL`. Pin one when you want reproducible
+output across runs.
 
 ### Inspect the prompt without calling a model
 
@@ -277,11 +289,14 @@ Confirm `ANTHROPIC_API_KEY` is set and valid.
 
 ### Ollama requests fail
 
-Confirm the daemon is running:
+Confirm the daemon is running and has at least one model pulled:
 
 ```bash
 curl http://127.0.0.1:11434/api/tags
+ollama list
 ```
+
+With no models installed the tool exits 1 rather than guessing a name.
 
 ### The wrong docs are being targeted
 

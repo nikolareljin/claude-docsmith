@@ -23,7 +23,7 @@ Recommended flow:
 ```bash
 claude-docsmith . --dry-run                       # one prompt per track
 claude-docsmith . --dry-run --audience developer  # developer track only
-claude-docsmith . --provider ollama --model llama3.1 --output-json docsmith-output.json
+claude-docsmith . --provider ollama --output-json docsmith-output.json   # model auto-detected
 claude-docsmith . --input-json docsmith-output.json --apply
 claude-docsmith . --check                         # offline freshness gate
 ```
