@@ -40,8 +40,9 @@ All notable changes to claude-docsmith are documented here.
   committed file drifts from the source. The unguarded byte-identical `site/logo.svg` copy is
   gone.
 - New `tests/test_site.py`: the derived mark stays in sync, every local `href`/`src` in the
-  page resolves, the hero stays readable by assistive tech, and the page never advertises a
-  PyPI install.
+  page resolves, the hero stays readable by assistive tech, the page never advertises a PyPI
+  install, and the version strings baked into the site and README match `__version__` — the
+  same class of stale information this release removed.
 - CI lints and byte-compiles `scripts/` alongside `src` and `tests`.
 - `vendor/script-helpers` submodule advanced to `0.19.0` (the current `production`).
   `ci-helpers` `production` is `0.18.0` and already current.

@@ -78,3 +78,19 @@ def test_pages_workflow_publishes_the_site_directory() -> None:
     workflow = (REPO_ROOT / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
     assert "actions/upload-pages-artifact" in workflow
     assert "path: site" in workflow
+
+
+def test_version_strings_in_docs_match_the_package() -> None:
+    """The site and README bake in a version. Without this they quietly go stale
+    one release after someone bumps the package -- the same class of wrong
+    information as the PyPI install this release removed."""
+    from claude_docsmith import __version__
+
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    stale = [
+        f"{label}: {found}"
+        for label, text in (("site/index.html", HTML), ("README.md", readme))
+        for found in re.findall(r"claude-docsmith(?:\.git)?[ @](\d+\.\d+\.\d+)", text)
+        if found != __version__
+    ]
+    assert stale == [], stale
