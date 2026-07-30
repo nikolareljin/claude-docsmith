@@ -56,8 +56,19 @@ IGNORED_DIRS = {
     ".git", "node_modules", ".venv", "venv", "__pycache__",
     "dist", "build", "target", "vendor", ".next", ".nuxt",
     "coverage", ".tox", "htmlcov", ".mypy_cache", ".pytest_cache",
-    "out", "bin", "obj",
+    ".ruff_cache", "out", "bin", "obj",
 }
+
+# Build metadata directories are named after the package, so they cannot be
+# matched by name. An editable install leaves one under src/, where PKG-INFO
+# duplicates the whole README and the sibling files burn scan slots that should
+# go to source.
+IGNORED_DIR_SUFFIXES = (".egg-info", ".dist-info", ".egg")
+
+
+def _is_ignored_dir(name: str) -> bool:
+    return name in IGNORED_DIRS or name.endswith(IGNORED_DIR_SUFFIXES)
+
 
 _LANGUAGE_MANIFEST_MAP: dict[str, str] = {
     "pyproject.toml": "python",
@@ -169,7 +180,7 @@ def _walk_files(root: Path, *, skip_tests: bool = False):
         current_path = Path(current_root)
         pruned_dirs = (
             dirname for dirname in dirnames
-            if dirname not in IGNORED_DIRS and (not skip_tests or dirname not in TEST_DIR_NAMES)
+            if not _is_ignored_dir(dirname) and (not skip_tests or dirname not in TEST_DIR_NAMES)
         )
         dirnames[:] = sorted(pruned_dirs)
         filenames.sort()
@@ -178,7 +189,7 @@ def _walk_files(root: Path, *, skip_tests: bool = False):
 
 
 def _should_skip(path: Path, root: Path) -> bool:
-    return any(part in IGNORED_DIRS for part in path.relative_to(root).parts)
+    return any(_is_ignored_dir(part) for part in path.relative_to(root).parts)
 
 
 def _is_safe_file(path: Path, root: Path) -> bool:

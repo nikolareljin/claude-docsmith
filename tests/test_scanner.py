@@ -242,3 +242,25 @@ def test_redaction_can_be_disabled(tmp_path: Path) -> None:
     joined = "\n".join(item.content for item in snapshot.scanned_files)
     assert leaked in joined
     assert snapshot.redactions == []
+
+
+def test_build_metadata_directories_are_not_scanned(tmp_path: Path) -> None:
+    """An editable install leaves *.egg-info under src/, and its PKG-INFO
+    duplicates the entire README into the prompt."""
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("# Real readme\n", encoding="utf-8")
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "app.py").write_text("x = 1\n", encoding="utf-8")
+    for name in ("demo.egg-info", "demo.dist-info", "demo.egg"):
+        meta = src / name
+        meta.mkdir()
+        (meta / "PKG-INFO").write_text("# Real readme\n(duplicated)\n", encoding="utf-8")
+
+    snapshot = scan_repository(tmp_path, max_files=40, max_bytes_per_file=8000)
+
+    assert "src/app.py" in snapshot.inventory
+    assert not [path for path in snapshot.inventory if ".egg-info" in path]
+    assert not [path for path in snapshot.inventory if ".dist-info" in path]
+    joined = "\n".join(item.content for item in snapshot.scanned_files)
+    assert joined.count("# Real readme") == 1
