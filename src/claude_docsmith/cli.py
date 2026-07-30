@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
-from importlib import resources
 import json
 import os
-from pathlib import Path
 import sys
+from importlib import resources
+from pathlib import Path
 
-from . import __version__, audiences, manifest as manifest_module
+from . import __version__, audiences
+from . import manifest as manifest_module
 from .models import GenerationResult, RepoSnapshot
 from .prompting import SkillRoot, build_prompt
 from .providers import ProviderError, discover_model, generate_text

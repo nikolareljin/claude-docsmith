@@ -8,7 +8,7 @@ from .redaction import MARKER_TEMPLATE
 
 
 class SkillRoot(Protocol):
-    def joinpath(self, *pathsegments: str) -> "SkillRoot": ...
+    def joinpath(self, *pathsegments: str) -> SkillRoot: ...
     def read_text(self, encoding: str = "utf-8") -> str: ...
 
 
@@ -81,12 +81,14 @@ def _json_contract(audience: Audience, output_root: str) -> str:
 
 
 def _redaction_notice(snapshot: RepoSnapshot) -> str:
+    marker = MARKER_TEMPLATE.format(kind="kind")
     lines = [
         "Security notice:",
-        f"Credential-shaped values were replaced with {MARKER_TEMPLATE.format(kind='kind')} "
-        "markers before this prompt was built.",
-        "Never reproduce a marker in the documentation and never guess what it replaced. "
-        "Describe the setting by name and say how a reader supplies their own value.",
+        f"Credential-shaped values were replaced with {marker} markers before this prompt was built.",
+        (
+            "Never reproduce a marker in the documentation and never guess what it replaced. "
+            "Describe the setting by name and say how a reader supplies their own value."
+        ),
     ]
     if snapshot.skipped_sensitive:
         listed = ", ".join(snapshot.skipped_sensitive[:10])

@@ -11,10 +11,10 @@ are recorded, so a finding can be printed or written to a manifest safely.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import PurePosixPath
-import re
 
 
 @dataclass(frozen=True, slots=True)

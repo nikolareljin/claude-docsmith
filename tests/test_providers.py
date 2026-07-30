@@ -13,7 +13,6 @@ from claude_docsmith.providers import (
     discover_model,
 )
 
-
 # ── Claude provider ──────────────────────────────────────────────────────────
 
 

@@ -34,7 +34,7 @@ claude-docsmith = "claude_docsmith.cli:main"
 dev = [
   "build>=1.2.2",
   "pytest>=8.0",
-  "ruff>=0.4",
+  "ruff>=0.16",
 ]
 
 [tool.setuptools]
@@ -50,6 +50,14 @@ claude_docsmith = [
   "resources/update-docs/templates/*.md",
   "resources/update-docs/templates/pages/*.md",
 ]
+
+[tool.ruff]
+line-length = 120
+
+# Pinned explicitly: ruff's default rule set changes between releases, so relying
+# on it makes CI fail on an unrelated commit the day a new ruff ships.
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "C4", "ISC"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

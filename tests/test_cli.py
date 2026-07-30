@@ -3,20 +3,21 @@ from pathlib import Path
 
 import pytest
 
-from claude_docsmith import audiences, manifest as manifest_module
+from claude_docsmith import audiences
+from claude_docsmith import manifest as manifest_module
 from claude_docsmith.cli import _apply_result, _resolve_skill_root, _run_check
 from claude_docsmith.models import GeneratedFile, GenerationResult, RepoSnapshot, ScannedFile
 
 
 def _args(**overrides) -> argparse.Namespace:
-    defaults = dict(
-        docs_dir="docs",
-        redact=True,
-        max_files=40,
-        max_bytes_per_file=8000,
-        max_context_kb=128,
-        skip_tests=False,
-    )
+    defaults = {
+        "docs_dir": "docs",
+        "redact": True,
+        "max_files": 40,
+        "max_bytes_per_file": 8000,
+        "max_context_kb": 128,
+        "skip_tests": False,
+    }
     defaults.update(overrides)
     return argparse.Namespace(**defaults)
 

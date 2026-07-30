@@ -6,7 +6,6 @@ from pathlib import Path
 from .models import RepoSnapshot, ScannedFile
 from .redaction import Finding, is_sensitive_path, redact
 
-
 DOC_CANDIDATES = [
     "README.md",
     "CLAUDE.md",

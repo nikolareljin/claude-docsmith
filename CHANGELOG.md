@@ -43,6 +43,13 @@ All notable changes to claude-docsmith are documented here.
 - The `audience` field on generated files is now set from the track that produced the file
   rather than taken from the model's own label.
 
+### Build
+
+- Pinned the ruff rule set in `pyproject.toml` (`[tool.ruff.lint] select`) and raised the dev
+  floor to `ruff>=0.16`. Relying on ruff's default rule set made CI fail on an unrelated commit
+  the day 0.16 shipped and enabled `I`/`UP`/`ISC`/`C4` by default. Import blocks sorted and the
+  new findings fixed across the package, including files untouched by this release.
+
 ### Notes
 
 - The output JSON contract is unchanged, so a 1.0.x payload still applies via `--input-json`

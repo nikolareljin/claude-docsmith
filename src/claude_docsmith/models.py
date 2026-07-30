@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import audiences
@@ -46,7 +46,7 @@ class GenerationResult:
     follow_up_docs: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_json_text(cls, text: str, default_audience: str | None = None) -> "GenerationResult":
+    def from_json_text(cls, text: str, default_audience: str | None = None) -> GenerationResult:
         candidate = text.strip()
         if candidate.startswith("```"):
             parts = candidate.split("```")
