@@ -2,6 +2,55 @@
 
 All notable changes to claude-docsmith are documented here.
 
+## [1.1.1] - 2026-07-30
+
+### Fixed
+
+- **`Release Tag` workflow failed to start.** It called `ci-helpers`'
+  `auto-tag-release.yml`, which declares `actions: write` for its dispatch job. GitHub
+  validates a reusable workflow's declared permissions at startup regardless of any `if:`
+  gate, so the run failed before it began and the `1.1.0` tag was never created. This
+  repository does not use auto-dispatch, so it now calls the least-privilege `auto-tag.yml`,
+  which needs exactly the permissions already granted.
+- **README advertised a PyPI package that does not exist.** The version and Python badges
+  rendered "package or version not found", and `pipx install claude-docsmith` /
+  `pip install --user claude-docsmith` would both 404. Badges now come from the git tag and
+  from `requires-python`; install instructions point at the repository, with a note on
+  pinning a released tag.
+
+### Added
+
+- **Documentation site** at [nikolareljin.github.io/claude-docsmith](https://nikolareljin.github.io/claude-docsmith/):
+  what the two tracks are, both install paths, and a worked standalone run against Ollama.
+  Source in `site/`, deployed from `main` by `.github/workflows/pages.yml`.
+
+### Fixed
+
+- **The site's hero was hidden from assistive tech.** The forge diagram carried
+  `aria-hidden="true"`, and the two track names and their file lists appear nowhere else on
+  the page, so screen readers got nothing from it. Only the decorative connector and strike
+  rule are hidden now.
+- **The favicon used the full mark.** Its ambient glow is tuned for 512px and renders as a
+  blob at favicon size; it now uses the small-size variant, as the masthead already did.
+
+### Build
+
+- `site/logo-mark.svg` is derived from `assets/logo.svg` by
+  `scripts/render_site_mark.py` instead of being a hand-edited copy, and a test fails if the
+  committed file drifts from the source. The unguarded byte-identical `site/logo.svg` copy is
+  gone.
+- New `tests/test_site.py`: the derived mark stays in sync, every local `href`/`src` in the
+  page resolves, the hero stays readable by assistive tech, the page never advertises a PyPI
+  install, and the version strings baked into the site and README match `__version__` — the
+  same class of stale information this release removed.
+- CI lints and byte-compiles `scripts/` alongside `src` and `tests`.
+- `vendor/script-helpers` submodule advanced to `0.19.0` (the current `production`).
+  `ci-helpers` `production` is `0.18.0` and already current.
+
+[1.1.1]: https://github.com/nikolareljin/claude-docsmith/compare/1.1.0...1.1.1
+
+---
+
 ## [1.1.0] - 2026-07-30
 
 ### Added

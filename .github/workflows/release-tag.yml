@@ -5,12 +5,17 @@ on:
     branches:
       - main
 
+# auto-tag.yml is the least-privilege variant and needs exactly these two.
+# auto-tag-release.yml declares `actions: write` for its dispatch job, and GitHub
+# validates a reusable workflow's declared permissions at startup regardless of
+# any `if:` gate — so calling it without granting that permission fails the run
+# before it begins. This repository does not use the auto-dispatch feature.
 permissions:
   contents: write
   pull-requests: read
 
 jobs:
   tag:
-    uses: nikolareljin/ci-helpers/.github/workflows/auto-tag-release.yml@production
+    uses: nikolareljin/ci-helpers/.github/workflows/auto-tag.yml@production
     with:
       update_production_tag: false

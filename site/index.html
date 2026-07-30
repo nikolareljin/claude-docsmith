@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Docsmith — two documentation tracks, forged from your code</title>
+<meta name="description" content="A Claude Code plugin and standalone CLI that generates a plain-language user manual and a deep developer reference from a repository. Runs against the Claude API or a local Ollama model.">
+<link rel="icon" href="logo-mark.svg" type="image/svg+xml">
+
+<meta property="og:title" content="Claude Docsmith">
+<meta property="og:description" content="Two documentation tracks, forged from your code.">
+<meta property="og:image" content="https://raw.githubusercontent.com/nikolareljin/claude-docsmith/main/assets/logo-hero.png">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* Palette lifted from the mark: forge void, steel, flame, and the blue of
+       the document's syntax lines. Flame reads "user", blue reads "developer". */
+    --void:        #07060A;
+    --ash:         #100E16;
+    --ash-raised:  #17141F;
+    --steel:       #1E293B;
+    --steel-edge:  #2C3A4E;
+    --steel-light: #8A99AD;
+    --paper:       #E7ECF3;
+
+    --flame:       #F97316;
+    --flame-hot:   #FDBA74;
+    --ember:       #DC2626;
+    --code:        #38BDF8;
+
+    --track-user:  var(--flame);
+    --track-dev:   var(--code);
+
+    --display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+    --body:    'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+    --gutter: clamp(1.25rem, 4vw, 4rem);
+    --measure: 74rem;
+    --rule: 1px solid var(--steel-edge);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--void);
+    color: var(--paper);
+    font-family: var(--body);
+    font-size: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Ambient forge heat, fixed so it reads as light in the room, not a gradient blob */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(58rem 42rem at 50% -8%, rgba(249,115,22,0.10), transparent 62%),
+      radial-gradient(40rem 30rem at 88% 12%, rgba(56,189,248,0.055), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .shell { position: relative; z-index: 1; }
+  .wrap { width: 100%; max-width: var(--measure); margin-inline: auto; padding-inline: var(--gutter); }
+
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--flame-hot); outline-offset: 3px; border-radius: 2px; }
+
+  /* ── Eyebrow: the utility voice, used for every structural label ───────── */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--steel-light);
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--steel-edge); }
+  .eyebrow--user { color: var(--track-user); }
+  .eyebrow--dev  { color: var(--track-dev); }
+
+  h1, h2, h3 { font-family: var(--display); font-weight: 900; letter-spacing: -0.02em; line-height: 1.02; margin: 0; }
+  h2 { font-size: clamp(1.9rem, 1.3rem + 2.4vw, 3rem); }
+  h3 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.005em; line-height: 1.25; }
+  p { margin: 0 0 1.1rem; }
+  .lede { font-size: clamp(1.05rem, 1rem + 0.5vw, 1.3rem); color: #C3CDDB; max-width: 46ch; }
+  .note { color: var(--steel-light); font-size: 0.95rem; }
+
+  /* ── Masthead ──────────────────────────────────────────────────────────── */
+  .masthead {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(7,6,10,0.86);
+    backdrop-filter: blur(12px);
+    border-bottom: var(--rule);
+  }
+  .masthead__inner { display: flex; align-items: center; gap: 1rem; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 0.7rem; text-decoration: none; font-family: var(--display); font-weight: 700; letter-spacing: -0.01em; }
+  .brand img { width: 30px; height: 30px; border-radius: 7px; display: block; }
+  .brand span { color: var(--paper); }
+  .brand b { color: var(--flame); font-weight: 900; }
+  .masthead nav { margin-left: auto; display: flex; gap: 1.4rem; align-items: center; min-width: 0; }
+  .masthead nav a {
+    font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--steel-light); text-decoration: none;
+  }
+  .masthead nav a:hover { color: var(--paper); }
+  @media (max-width: 46rem) { .masthead nav a.is-optional { display: none; } }
+  @media (max-width: 30rem) {
+    .masthead nav { gap: 1rem; }
+    .masthead nav a.is-secondary { display: none; }
+    .brand span { font-size: 0.95rem; }
+  }
+
+  /* ── Hero ──────────────────────────────────────────────────────────────── */
+  .hero { padding-block: clamp(3rem, 7vw, 5.5rem) clamp(2rem, 5vw, 3rem); }
+  .hero__copy { max-width: 62rem; }
+  .hero h1 { font-size: clamp(2.4rem, 1.3rem + 4.6vw, 4.6rem); max-width: 17ch; }
+  .hero h1 em { font-style: normal; color: var(--flame); }
+  .hero .lede { margin-top: 1.6rem; max-width: 52ch; }
+  .hero__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-family: var(--mono); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; text-decoration: none;
+    padding: 0.8rem 1.3rem; border-radius: 2px; border: 1px solid var(--steel-edge);
+    color: var(--paper); background: transparent;
+    transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+  }
+  .btn:hover { border-color: var(--steel-light); background: rgba(255,255,255,0.03); }
+  .btn--hot { background: var(--flame); border-color: var(--flame); color: #1A0E03; }
+  .btn--hot:hover { background: var(--flame-hot); border-color: var(--flame-hot); color: #1A0E03; }
+
+  /* ── Signature: the strike, and the fork into two tracks ───────────────── */
+  .forge { margin-top: clamp(2.5rem, 6vw, 4rem); max-width: 58rem; }
+  .forge__source {
+    font-family: var(--mono); font-size: 0.8rem; color: var(--steel-light);
+    padding-bottom: 0.9rem;
+  }
+  .forge__source b { color: var(--paper); font-weight: 400; }
+  .forge__anvil {
+    height: 3px; width: 100%;
+    background: linear-gradient(90deg, transparent, var(--steel-edge) 12%, var(--flame) 50%, var(--steel-edge) 88%, transparent);
+    transform-origin: 50% 50%;
+    animation: strike 900ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  }
+  @keyframes strike { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+
+  .forge__split { display: grid; grid-template-columns: 1fr 1fr; }
+
+  /* One strike point, two paths out. Drawn as SVG so the fork actually meets
+     at a single point instead of reading as a bracket. */
+  .forge__fork { display: block; width: 100%; height: 3.4rem; }
+  .forge__fork path { fill: none; stroke-width: 1; }
+  .forge__fork .fork-user { stroke: var(--track-user); }
+  .forge__fork .fork-dev  { stroke: var(--track-dev); }
+  .forge__fork .spark { fill: var(--flame-hot); }
+
+  .track {
+    border-top: 2px solid var(--steel-edge);
+    padding: 1.4rem 1.6rem 1.6rem;
+    animation: rise 700ms 260ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  }
+  .track--user { border-top-color: var(--track-user); }
+  .track--dev  { border-top-color: var(--track-dev); animation-delay: 400ms; }
+  @keyframes rise { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .track__name { font-family: var(--mono); font-size: 0.95rem; font-weight: 600; margin-bottom: 0.35rem; }
+  .track--user .track__name { color: var(--track-user); }
+  .track--dev  .track__name { color: var(--track-dev); }
+  .track__who { color: var(--steel-light); font-size: 0.95rem; margin: 0 0 0.9rem; }
+  .track__list { list-style: none; margin: 0; padding: 0; font-family: var(--mono); font-size: 0.8rem; color: #B7C3D2; }
+  .track__list li { padding: 0.2rem 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forge__anvil, .track { animation: none; }
+  }
+  @media (max-width: 46rem) {
+    .forge__split { grid-template-columns: 1fr; }
+    .forge__fork { display: none; }
+    .track { padding-inline: 0; }
+  }
+
+  /* ── Sections ──────────────────────────────────────────────────────────── */
+  .section { padding-block: clamp(3.5rem, 8vw, 6rem); border-top: var(--rule); }
+  .section__head { max-width: 52ch; margin-bottom: clamp(2rem, 4vw, 3rem); }
+  .section__head p { color: #C3CDDB; margin-top: 1rem; margin-bottom: 0; }
+
+  .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1.5rem; }
+
+  .panel { background: var(--ash); border: var(--rule); border-radius: 3px; padding: 1.5rem; }
+  .panel > h3 { margin-bottom: 0.5rem; }
+  .panel > p { color: var(--steel-light); font-size: 0.98rem; }
+  .panel > p:last-of-type { margin-bottom: 1.1rem; }
+
+  /* ── Terminal ──────────────────────────────────────────────────────────── */
+  .term {
+    background: var(--ash-raised); border: var(--rule); border-radius: 3px;
+    font-family: var(--mono); font-size: 0.82rem; line-height: 1.85;
+    overflow: hidden;
+  }
+  .term__bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.55rem 0.9rem; border-bottom: var(--rule);
+    color: var(--steel-light); font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  .term__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--steel-edge); }
+  .term pre { margin: 0; padding: 1rem 1.1rem; overflow-x: auto; }
+  .term code { color: #CBD5E1; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .tree code { white-space: pre; }
+  .cmd { color: var(--paper); }
+  .cmd::before { content: "$ "; color: var(--flame); }
+  .slash::before { content: "> "; color: var(--code); }
+  .out { color: var(--steel-light); }
+  .hl-user { color: var(--track-user); }
+  .hl-dev  { color: var(--track-dev); }
+  .cm { color: #6B7A8F; font-style: italic; }
+
+  /* ── Steps: a real sequence, so numbering earns its place ──────────────── */
+  .steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: grid; gap: 1.25rem; }
+  .steps > li { counter-increment: step; display: grid; grid-template-columns: 3.2rem 1fr; gap: 0.4rem 1rem; align-items: start; }
+  .steps > li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--mono); font-size: 0.78rem; font-weight: 600; color: var(--flame);
+    padding-top: 0.15rem;
+  }
+  .steps h3 { grid-column: 2; }
+  .steps .step__body { grid-column: 2; }
+  .steps .step__body p { color: var(--steel-light); font-size: 0.97rem; margin: 0.35rem 0 0.85rem; }
+  .steps .term { margin-top: 0.2rem; }
+  @media (max-width: 34rem) {
+    .steps > li { grid-template-columns: 1fr; }
+    .steps > li::before { grid-column: 1; }
+    .steps h3, .steps .step__body { grid-column: 1; }
+  }
+
+  /* ── Output tree ───────────────────────────────────────────────────────── */
+  .tree { font-family: var(--mono); font-size: 0.8rem; line-height: 1.95; margin: 0; color: #B7C3D2; overflow-x: auto; }
+  .tree .dir-user { color: var(--track-user); }
+  .tree .dir-dev  { color: var(--track-dev); }
+  .tree .cm { color: #66748A; }
+
+  /* ── Guards ────────────────────────────────────────────────────────────── */
+  .guards { display: grid; gap: 0; border-top: var(--rule); }
+  .guard { display: grid; grid-template-columns: minmax(0, 16rem) 1fr; gap: 1rem 2.5rem; padding: 1.4rem 0; border-bottom: var(--rule); }
+  .guard code { font-family: var(--mono); font-size: 0.85rem; color: var(--flame-hot); }
+  .guard p { margin: 0; color: var(--steel-light); font-size: 0.97rem; }
+  @media (max-width: 44rem) { .guard { grid-template-columns: 1fr; gap: 0.35rem; } }
+
+  /* ── Footer ────────────────────────────────────────────────────────────── */
+  .foot { border-top: var(--rule); padding-block: 2.5rem 3.5rem; color: var(--steel-light); font-size: 0.9rem; }
+  .foot__row { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; justify-content: space-between; }
+  .foot a { color: var(--steel-light); }
+  .foot a:hover { color: var(--paper); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <div class="wrap masthead__inner">
+      <a class="brand" href="#top">
+        <img src="logo-mark.svg" alt="">
+        <span>Claude&nbsp;<b>Docsmith</b></span>
+      </a>
+      <nav>
+        <a href="#install" class="is-secondary">Install</a>
+        <a href="#plugin" class="is-optional">Plugin</a>
+        <a href="#ollama" class="is-secondary">Ollama</a>
+        <a href="#output" class="is-optional">Output</a>
+        <a href="https://github.com/nikolareljin/claude-docsmith">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- HERO ─────────────────────────────────────────────────────────────── -->
+    <section class="wrap hero">
+      <div class="hero__copy">
+      <p class="eyebrow">One command</p>
+      <h1>Two documentation tracks, <em>forged</em> from your code.</h1>
+      <p class="lede">
+        A manual your users can follow and a reference your engineers can trust are
+        different documents. Docsmith writes both, reads the repository to do it, and
+        tells you when they stop matching the code.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--hot" href="#install">Install it</a>
+        <a class="btn" href="#ollama">Run it with Ollama</a>
+      </div>
+      </div>
+
+      <!-- Signature: one source, struck once, forked into two tracks -->
+      <div class="forge">
+        <p class="forge__source">one command, read against <b>your repository</b></p>
+        <div class="forge__anvil" aria-hidden="true"></div>
+        <svg class="forge__fork" viewBox="0 0 100 34" preserveAspectRatio="none" focusable="false" aria-hidden="true">
+          <path class="fork-user" d="M50 0 V10 Q50 16 44 16 H6 Q0 16 0 22 V34" vector-effect="non-scaling-stroke" />
+          <path class="fork-dev"  d="M50 0 V10 Q50 16 56 16 H94 Q100 16 100 22 V34" vector-effect="non-scaling-stroke" />
+        </svg>
+        <div class="forge__split">
+          <div class="track track--user">
+            <p class="track__name">docs/user/</p>
+            <p class="track__who">For the person using the product. No module paths, no signatures, no jargon.</p>
+            <ul class="track__list">
+              <li>getting-started.md</li>
+              <li>features/&lt;slug&gt;.md</li>
+              <li>troubleshooting.md</li>
+              <li>faq.md</li>
+            </ul>
+          </div>
+          <div class="track track--dev">
+            <p class="track__name">docs/developer/</p>
+            <p class="track__who">For the engineer calling or extending it. Full signatures, every parameter, every version.</p>
+            <ul class="track__list">
+              <li>architecture.md</li>
+              <li>api/&lt;version&gt;/&lt;resource&gt;.md</li>
+              <li>reference/classes.md</li>
+              <li>extending.md</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTALL ──────────────────────────────────────────────────────────── -->
+    <section class="section" id="install">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="eyebrow">Install</p>
+          <h2>Two ways in.</h2>
+          <p>
+            Use it inside Claude Code as a plugin, or install the CLI and drive it
+            yourself. The CLI is what you want for CI, for scripting, and for running
+            entirely on your own machine.
+          </p>
+        </div>
+
+        <div class="duo">
+          <div class="panel">
+            <h3>As a Claude Code plugin</h3>
+            <p>No API key, no Python. Claude Code does the generation.</p>
+            <div class="term">
+              <div class="term__bar"><span class="term__dot"></span> claude code</div>
+<pre><code><span class="slash">/plugin marketplace add nikolareljin/claude-plugins</span>
+<span class="slash">/plugin install claude-docsmith@nikolareljin-plugins</span>
+<span class="cm"># restart Claude Code, then</span>
+<span class="slash">/nr-update-docs</span></code></pre>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>As a standalone CLI</h3>
+            <p>Python 3.10 or newer, tested through 3.12. Not on PyPI yet, so install from the repository.</p>
+            <div class="term">
+              <div class="term__bar"><span class="term__dot"></span> shell</div>
+<pre><code><span class="cmd">pipx install git+https://github.com/nikolareljin/claude-docsmith.git</span>
+<span class="cmd">claude-docsmith --version</span>
+<span class="out">claude-docsmith 1.1.1</span></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLUGIN ───────────────────────────────────────────────────────────── -->
+    <section class="section" id="plugin">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="eyebrow">In Claude Code</p>
+          <h2>Say the word, get both tracks.</h2>
+          <p>
+            Run <code>/nr-update-docs</code> in the repository you want documented.
+            Docsmith reads the code, the config, the commands and the tests, then writes
+            each track separately so neither is squeezed to fit the other.
+          </p>
+        </div>
+        <div class="term">
+          <div class="term__bar"><span class="term__dot"></span> claude code</div>
+<pre><code><span class="slash">/nr-update-docs</span>
+
+<span class="out">Reading README.md, pyproject.toml, src/**, tests/**</span>
+<span class="out">Writing the user manual...</span>
+<span class="hl-user">  docs/user/index.md            created</span>
+<span class="hl-user">  docs/user/getting-started.md  created</span>
+<span class="out">Writing the developer reference...</span>
+<span class="hl-dev">  docs/developer/architecture.md  updated</span>
+<span class="hl-dev">  docs/developer/api/v1/orders.md created</span>
+<span class="out">Updated docs/.docsmith/manifest.json</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- OLLAMA ───────────────────────────────────────────────────────────── -->
+    <section class="section" id="ollama">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="eyebrow">Standalone</p>
+          <h2>Run the whole thing locally, with Ollama.</h2>
+          <p>
+            No API key and nothing leaves your machine. Docsmith asks Ollama which
+            models you actually have, so there is no model name to look up and nothing
+            to keep in sync when you pull a new one.
+          </p>
+        </div>
+
+        <ol class="steps">
+          <li>
+            <h3>Point Ollama at a model you have</h3>
+            <div class="step__body">
+              <p>Any instruct model works. Bigger models write noticeably better documentation.</p>
+              <div class="term">
+                <div class="term__bar"><span class="term__dot"></span> shell</div>
+<pre><code><span class="cmd">ollama list</span>
+<span class="out">NAME              SIZE      MODIFIED</span>
+<span class="out">qwen2.5:14b       9.0 GB    2 days ago</span>
+<span class="out">llama3.3:70b      42 GB     3 weeks ago</span></code></pre>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <h3>See what will be sent, before anything is</h3>
+            <div class="step__body">
+              <p>A dry run prints one prompt per track and never contacts a model. Credentials are stripped and sensitive files are skipped outright.</p>
+              <div class="term">
+                <div class="term__bar"><span class="term__dot"></span> shell</div>
+<pre><code><span class="cmd">claude-docsmith . --dry-run</span>
+<span class="out">Skipped 1 sensitive file(s): src/.env</span>
+<span class="out">Redacted 1 credential-shaped value(s) before prompting (github-token).</span>
+<span class="out">=== AUDIENCE: user ===</span>
+<span class="out">...</span>
+<span class="out">=== AUDIENCE: developer ===</span></code></pre>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <h3>Generate</h3>
+            <div class="step__body">
+              <p>One call per track. Docsmith prints the model it picked, so a run is never quietly using something you did not expect.</p>
+              <div class="term">
+                <div class="term__bar"><span class="term__dot"></span> shell</div>
+<pre><code><span class="cmd">claude-docsmith . --provider ollama --output-json docsmith-output.json</span>
+<span class="out">Using ollama model: qwen2.5:14b</span>
+
+<span class="cm"># pin one instead, if you prefer</span>
+<span class="cmd">claude-docsmith . --provider ollama --model llama3.3:70b --timeout 1800</span>
+<span class="cm"># or set it once</span>
+<span class="cmd">export DOCSMITH_OLLAMA_MODEL=qwen2.5:14b</span></code></pre>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <h3>Review, then write it into the repo</h3>
+            <div class="step__body">
+              <p>The JSON lists every file before anything is written. A page that falls outside its own track is refused, and nothing is written at all if any file is rejected.</p>
+              <div class="term">
+                <div class="term__bar"><span class="term__dot"></span> shell</div>
+<pre><code><span class="cmd">claude-docsmith . --input-json docsmith-output.json --apply</span>
+<span class="hl-user">- docs/user/index.md (user, create)</span>
+<span class="hl-dev">- docs/developer/index.md (developer, create)</span>
+<span class="out">Wrote 2 file(s) and updated docs/.docsmith/manifest.json.</span></code></pre>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <h3>Keep them honest</h3>
+            <div class="step__body">
+              <p>Later, ask whether the docs still match the code. Fully offline, no API key, safe on a fork pull request.</p>
+              <div class="term">
+                <div class="term__bar"><span class="term__dot"></span> shell</div>
+<pre><code><span class="cmd">claude-docsmith . --check</span>
+<span class="out">Documentation is stale (generated 2026-07-30T14:29:42Z):</span>
+<span class="out">- src/client.py (changed since docs were generated)</span>
+<span class="cmd">echo $?</span>
+<span class="out">1</span></code></pre>
+              </div>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- OUTPUT ───────────────────────────────────────────────────────────── -->
+    <section class="section" id="output">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="eyebrow">What lands in your repo</p>
+          <h2>Two trees, and a record of how they got there.</h2>
+          <p>
+            Each track owns its directory, so you can publish one without the other —
+            a wiki for your users, a docs site for your engineers, or both.
+          </p>
+        </div>
+        <div class="panel">
+<pre class="tree"><code>docs/
+├── <span class="dir-user">user/</span>                      <span class="cm">the manual</span>
+│   ├── index.md
+│   ├── getting-started.md
+│   ├── features/&lt;slug&gt;.md      <span class="cm">every option, default, and when to change it</span>
+│   ├── screenshots/
+│   ├── troubleshooting.md
+│   └── faq.md
+├── <span class="dir-dev">developer/</span>                 <span class="cm">the reference</span>
+│   ├── index.md
+│   ├── architecture.md
+│   ├── api/&lt;version&gt;/&lt;resource&gt;.md   <span class="cm">v1 and v2 never share a page</span>
+│   ├── reference/classes.md    <span class="cm">signatures, bases, raised errors</span>
+│   └── extending.md
+└── <span class="cm">.docsmith/manifest.json    what was written, and from which sources</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- GUARDS ───────────────────────────────────────────────────────────── -->
+    <section class="section" id="guards">
+      <div class="wrap">
+        <div class="section__head">
+          <p class="eyebrow">Guard rails</p>
+          <h2>What it refuses to do.</h2>
+        </div>
+        <div class="guards">
+          <div class="guard">
+            <code>never reads secrets</code>
+            <p><code>.env</code>, private keys, keystores, <code>.npmrc</code>, credential stores and Terraform state are skipped before they are opened. Credential-shaped values in files it does read are replaced with a marker.</p>
+          </div>
+          <div class="guard">
+            <code>--fail-on-secret</code>
+            <p>Exits non-zero when the repository contains credential-shaped content. Prints the file and line, never the value.</p>
+          </div>
+          <div class="guard">
+            <code>--check</code>
+            <p>Compares the manifest against the current sources and exits non-zero on drift. No network, no API key.</p>
+          </div>
+          <div class="guard">
+            <code>stays in its lane</code>
+            <p>A generated page can only be written inside its own track. It never edits your source code.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot__row">
+      <p style="margin:0">MIT licensed. Built by <a href="https://github.com/nikolareljin">Nikola Reljin</a>.</p>
+      <p style="margin:0">
+        <a href="https://github.com/nikolareljin/claude-docsmith">Repository</a> ·
+        <a href="https://github.com/nikolareljin/claude-docsmith/blob/main/docs/configuration.md">Configuration</a> ·
+        <a href="https://github.com/nikolareljin/claude-docsmith/issues">Issues</a>
+      </p>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

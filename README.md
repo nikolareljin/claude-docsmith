@@ -7,10 +7,14 @@
      alt="Claude Docsmith — user and developer documentation, forged from your code."
      width="820">
 
-[![PyPI](https://img.shields.io/pypi/v/claude-docsmith?color=F97316&label=pypi)](https://pypi.org/project/claude-docsmith/)
-[![Python](https://img.shields.io/pypi/pyversions/claude-docsmith?color=F97316)](https://pypi.org/project/claude-docsmith/)
+<!-- Not PyPI badges: this package is not published there, so shields.io renders
+     "package or version not found". Version comes from the git tag the release
+     workflow creates; the Python badge shows the requires-python floor. -->
+[![Release](https://img.shields.io/github/v/tag/nikolareljin/claude-docsmith?color=F97316&label=release&sort=semver)](https://github.com/nikolareljin/claude-docsmith/tags)
+[![Python](https://img.shields.io/badge/python-3.10%2B-F97316)](https://github.com/nikolareljin/claude-docsmith/blob/main/pyproject.toml)
 [![CI](https://github.com/nikolareljin/claude-docsmith/actions/workflows/ci.yml/badge.svg)](https://github.com/nikolareljin/claude-docsmith/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-F97316)](./LICENSE)
+[![Docs](https://img.shields.io/badge/docs-github%20pages-F97316)](https://nikolareljin.github.io/claude-docsmith/)
 
 </div>
 
@@ -86,31 +90,33 @@ The plugin should appear under `nikolareljin-plugins`. If the command does not a
 
 The CLI is optional. Install it only if you want the prompt-pack generator or direct provider integration.
 
-**Prerequisites**: Python 3.10+
+**Prerequisites**: Python 3.10 or newer. CI tests 3.10, 3.11 and 3.12.
 
-**Linux / WSL (Ubuntu/Debian)**
+The package is not on PyPI yet, so install it from the repository.
+
+**Linux / WSL / macOS**
 
 ```bash
 # Option A: pipx (recommended — isolated, no system conflicts)
-pipx install claude-docsmith
+pipx install git+https://github.com/nikolareljin/claude-docsmith.git
 
 # Option B: user install
-pip install --user claude-docsmith
+pip install --user git+https://github.com/nikolareljin/claude-docsmith.git
 ```
 
-> **pipx not installed?** `sudo apt install pipx` (Ubuntu 23.04+) or `pip install --user pipx`
+> **pipx not installed?** `sudo apt install pipx` (Ubuntu 23.04+), `brew install pipx` (macOS),
+> or `pip install --user pipx`.
 
-**macOS**
+Pin a released version by appending a tag:
 
 ```bash
-brew install pipx
-pipx install claude-docsmith
+pipx install git+https://github.com/nikolareljin/claude-docsmith.git@1.1.1
 ```
 
-**From source**
+**From source (for development)**
 
 ```bash
-git clone https://github.com/nikolareljin/claude-docsmith
+git clone --recurse-submodules https://github.com/nikolareljin/claude-docsmith
 cd claude-docsmith
 pipx install -e "."
 ```
@@ -284,6 +290,7 @@ publishing the docs elsewhere.
 claude-docsmith/
 ├── .claude-plugin/plugin.json      plugin manifest
 ├── assets/                         logo sources (SVG) and rendered PNGs
+├── site/                           GitHub Pages landing page
 ├── commands/nr-update-docs.md      Claude Code slash command (/nr-update-docs)
 ├── skills/update-docs/             skill definition, per-audience references, checklists, page templates
 ├── src/claude_docsmith/            CLI source
@@ -382,6 +389,12 @@ Maintainer publish workflow and Anthropic official directory submission: [docs/p
 
 See [docs/developer-guide.md](./docs/developer-guide.md) and [docs/architecture.md](./docs/architecture.md).
 
+## Documentation site
+
+[nikolareljin.github.io/claude-docsmith](https://nikolareljin.github.io/claude-docsmith/) —
+install, plugin usage, and a worked standalone run against Ollama. The page lives in
+[`site/`](./site) and deploys from `main` via `.github/workflows/pages.yml`.
+
 ## Logo
 
 The mark is a document on an anvil under a forge spark: source code struck into
@@ -394,12 +407,15 @@ documentation. Vector sources and rendered PNGs live in [`assets/`](./assets).
 | `assets/logo-hero.svg` | Wide banner with wordmark, 1200×320. Canonical source |
 | `assets/logo-hero.png` | Banner used by this README and on PyPI |
 
-Regenerate the PNGs after editing either SVG:
+Regenerate the derived files after editing either SVG:
 
 ```bash
 inkscape assets/logo.svg      -o assets/logo.png      -w 512  -h 512
 inkscape assets/logo-hero.svg -o assets/logo-hero.png -w 1200 -h 320
+python3 scripts/render_site_mark.py   # site/logo-mark.svg, used by the docs site
 ```
+
+`tests/test_site.py` fails if `site/logo-mark.svg` drifts from `assets/logo.svg`.
 
 ## About
 
