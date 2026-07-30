@@ -9,9 +9,9 @@
 
 <!-- Not PyPI badges: this package is not published there, so shields.io renders
      "package or version not found". Version comes from the git tag the release
-     workflow creates; the Python range mirrors requires-python and the CI matrix. -->
+     workflow creates; the Python badge shows the requires-python floor. -->
 [![Release](https://img.shields.io/github/v/tag/nikolareljin/claude-docsmith?color=F97316&label=release&sort=semver)](https://github.com/nikolareljin/claude-docsmith/tags)
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-F97316)](https://github.com/nikolareljin/claude-docsmith/blob/main/pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.10%2B-F97316)](https://github.com/nikolareljin/claude-docsmith/blob/main/pyproject.toml)
 [![CI](https://github.com/nikolareljin/claude-docsmith/actions/workflows/ci.yml/badge.svg)](https://github.com/nikolareljin/claude-docsmith/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-F97316)](./LICENSE)
 [![Docs](https://img.shields.io/badge/docs-github%20pages-F97316)](https://nikolareljin.github.io/claude-docsmith/)
@@ -90,7 +90,7 @@ The plugin should appear under `nikolareljin-plugins`. If the command does not a
 
 The CLI is optional. Install it only if you want the prompt-pack generator or direct provider integration.
 
-**Prerequisites**: Python 3.10, 3.11 or 3.12
+**Prerequisites**: Python 3.10 or newer. CI tests 3.10, 3.11 and 3.12.
 
 The package is not on PyPI yet, so install it from the repository.
 
