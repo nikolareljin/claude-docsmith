@@ -2,6 +2,50 @@
 
 All notable changes to claude-docsmith are documented here.
 
+## [1.1.0] - 2026-07-30
+
+### Added
+
+- **Two-track generation** (#4). `--audience user|developer|both` (default `both`). Each track
+  gets its own prompt and its own provider call, so a complete user manual and a complete
+  developer reference no longer compete for a single output token budget.
+- **Audience-scoped output trees**. Generated files are written to `docs/user/**` and
+  `docs/developer/**`; a file outside its own track's root is rejected. The user track may
+  additionally write `README.md`. New `--docs-dir` flag relocates the documentation root.
+- **Secret redaction** (#5). A sensitive-filename deny list keeps `.env`, private keys,
+  keystores, `.netrc`, `.npmrc`, `.pypirc`, credential stores, and Terraform state from being
+  read at all. Credential-shaped values in files that are read are replaced with
+  `[REDACTED:<kind>]` markers, inbound (before prompting) and outbound (before `--apply`
+  writes). Findings record `path`, `line`, and `kind` only — never the value.
+  `--fail-on-secret` exits `2`; `--no-redact` disables content scrubbing but not the deny list.
+- **Documentation manifest and drift gate** (#6). `--apply` writes
+  `docs/.docsmith/manifest.json` recording every generated page, its track, and the hash of
+  every source it was derived from. `--check` re-scans and exits `1` on drift, `0` when
+  current, with no network request — usable as a CI freshness gate.
+- **Per-audience skill references** (#7). `SKILL.md` is now an orchestrator routing to
+  `references/user-manual.md` and `references/developer-reference.md`, plus page templates
+  under `templates/pages/`. Each track loads only its own reference and checklist.
+- `--version` flag.
+
+### Changed
+
+- Default Claude model is now `claude-opus-5` (was `claude-opus-4-6`).
+- Claude API `max_tokens` raised from 8192 to 16000, and the default `--timeout` from 180 to
+  300 seconds, to accommodate longer per-track responses.
+- `--dry-run` prints one prompt per selected track under an `=== AUDIENCE: <track> ===`
+  separator, each with its own context stats.
+- The `audience` field on generated files is now set from the track that produced the file
+  rather than taken from the model's own label.
+
+### Notes
+
+- The output JSON contract is unchanged, so a 1.0.x payload still applies via `--input-json`
+  provided its paths fall inside a track root.
+
+[1.1.0]: https://github.com/nikolareljin/claude-docsmith/compare/1.0.1...1.1.0
+
+---
+
 ## [1.0.1] - 2026-05-27
 
 ### Fixed

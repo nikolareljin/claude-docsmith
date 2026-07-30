@@ -54,7 +54,7 @@ Approve the proposed changes. Claude writes the updated documentation files into
 # Generate
 claude-docsmith /path/to/repo \
   --provider claude \
-  --model claude-opus-4-6 \
+  --model claude-opus-5 \
   --output-json docsmith-output.json
 
 # Review
