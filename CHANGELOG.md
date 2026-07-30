@@ -2,6 +2,37 @@
 
 All notable changes to claude-docsmith are documented here.
 
+## [1.1.1] - 2026-07-30
+
+### Fixed
+
+- **`Release Tag` workflow failed to start.** It called `ci-helpers`'
+  `auto-tag-release.yml`, which declares `actions: write` for its dispatch job. GitHub
+  validates a reusable workflow's declared permissions at startup regardless of any `if:`
+  gate, so the run failed before it began and the `1.1.0` tag was never created. This
+  repository does not use auto-dispatch, so it now calls the least-privilege `auto-tag.yml`,
+  which needs exactly the permissions already granted.
+- **README advertised a PyPI package that does not exist.** The version and Python badges
+  rendered "package or version not found", and `pipx install claude-docsmith` /
+  `pip install --user claude-docsmith` would both 404. Badges now come from the git tag and
+  from `requires-python`; install instructions point at the repository, with a note on
+  pinning a released tag.
+
+### Added
+
+- **Documentation site** at [nikolareljin.github.io/claude-docsmith](https://nikolareljin.github.io/claude-docsmith/):
+  what the two tracks are, both install paths, and a worked standalone run against Ollama.
+  Source in `site/`, deployed from `main` by `.github/workflows/pages.yml`.
+
+### Build
+
+- `vendor/script-helpers` submodule advanced to `0.19.0` (the current `production`).
+  `ci-helpers` `production` is `0.18.0` and already current.
+
+[1.1.1]: https://github.com/nikolareljin/claude-docsmith/compare/1.1.0...1.1.1
+
+---
+
 ## [1.1.0] - 2026-07-30
 
 ### Added
