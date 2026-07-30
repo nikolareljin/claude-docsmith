@@ -407,12 +407,15 @@ documentation. Vector sources and rendered PNGs live in [`assets/`](./assets).
 | `assets/logo-hero.svg` | Wide banner with wordmark, 1200×320. Canonical source |
 | `assets/logo-hero.png` | Banner used by this README and on PyPI |
 
-Regenerate the PNGs after editing either SVG:
+Regenerate the derived files after editing either SVG:
 
 ```bash
 inkscape assets/logo.svg      -o assets/logo.png      -w 512  -h 512
 inkscape assets/logo-hero.svg -o assets/logo-hero.png -w 1200 -h 320
+python3 scripts/render_site_mark.py   # site/logo-mark.svg, used by the docs site
 ```
+
+`tests/test_site.py` fails if `site/logo-mark.svg` drifts from `assets/logo.svg`.
 
 ## About
 

@@ -24,8 +24,25 @@ All notable changes to claude-docsmith are documented here.
   what the two tracks are, both install paths, and a worked standalone run against Ollama.
   Source in `site/`, deployed from `main` by `.github/workflows/pages.yml`.
 
+### Fixed
+
+- **The site's hero was hidden from assistive tech.** The forge diagram carried
+  `aria-hidden="true"`, and the two track names and their file lists appear nowhere else on
+  the page, so screen readers got nothing from it. Only the decorative connector and strike
+  rule are hidden now.
+- **The favicon used the full mark.** Its ambient glow is tuned for 512px and renders as a
+  blob at favicon size; it now uses the small-size variant, as the masthead already did.
+
 ### Build
 
+- `site/logo-mark.svg` is derived from `assets/logo.svg` by
+  `scripts/render_site_mark.py` instead of being a hand-edited copy, and a test fails if the
+  committed file drifts from the source. The unguarded byte-identical `site/logo.svg` copy is
+  gone.
+- New `tests/test_site.py`: the derived mark stays in sync, every local `href`/`src` in the
+  page resolves, the hero stays readable by assistive tech, and the page never advertises a
+  PyPI install.
+- CI lints and byte-compiles `scripts/` alongside `src` and `tests`.
 - `vendor/script-helpers` submodule advanced to `0.19.0` (the current `production`).
   `ci-helpers` `production` is `0.18.0` and already current.
 
