@@ -1,4 +1,18 @@
-# Claude Docsmith
+<div align="center">
+
+<!-- Absolute URL and PNG on purpose: this file is also the PyPI long description,
+     which cannot resolve relative paths and does not render SVG.
+     Vector source: assets/logo-hero.svg -->
+<img src="https://raw.githubusercontent.com/nikolareljin/claude-docsmith/main/assets/logo-hero.png"
+     alt="Claude Docsmith — user and developer documentation, forged from your code."
+     width="820">
+
+[![PyPI](https://img.shields.io/pypi/v/claude-docsmith?color=F97316&label=pypi)](https://pypi.org/project/claude-docsmith/)
+[![Python](https://img.shields.io/pypi/pyversions/claude-docsmith?color=F97316)](https://pypi.org/project/claude-docsmith/)
+[![CI](https://github.com/nikolareljin/claude-docsmith/actions/workflows/ci.yml/badge.svg)](https://github.com/nikolareljin/claude-docsmith/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-F97316)](./LICENSE)
+
+</div>
 
 `claude-docsmith` is a Claude Code plugin for repository documentation, with an optional CLI for prompt-pack generation and local Ollama or Claude API fallback.
 
@@ -269,6 +283,7 @@ publishing the docs elsewhere.
 ```text
 claude-docsmith/
 ├── .claude-plugin/plugin.json      plugin manifest
+├── assets/                         logo sources (SVG) and rendered PNGs
 ├── commands/nr-update-docs.md      Claude Code slash command (/nr-update-docs)
 ├── skills/update-docs/             skill definition, per-audience references, checklists, page templates
 ├── src/claude_docsmith/            CLI source
@@ -366,6 +381,25 @@ Maintainer publish workflow and Anthropic official directory submission: [docs/p
 ## Developer notes
 
 See [docs/developer-guide.md](./docs/developer-guide.md) and [docs/architecture.md](./docs/architecture.md).
+
+## Logo
+
+The mark is a document on an anvil under a forge spark: source code struck into
+documentation. Vector sources and rendered PNGs live in [`assets/`](./assets).
+
+| File | Use |
+|---|---|
+| `assets/logo.svg` | Square mark, 512×512. Canonical source |
+| `assets/logo.png` | Square mark, rasterized for contexts without SVG support |
+| `assets/logo-hero.svg` | Wide banner with wordmark, 1200×320. Canonical source |
+| `assets/logo-hero.png` | Banner used by this README and on PyPI |
+
+Regenerate the PNGs after editing either SVG:
+
+```bash
+inkscape assets/logo.svg      -o assets/logo.png      -w 512  -h 512
+inkscape assets/logo-hero.svg -o assets/logo-hero.png -w 1200 -h 320
+```
 
 ## About
 

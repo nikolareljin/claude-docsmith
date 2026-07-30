@@ -26,6 +26,10 @@ All notable changes to claude-docsmith are documented here.
   `references/user-manual.md` and `references/developer-reference.md`, plus page templates
   under `templates/pages/`. Each track loads only its own reference and checklist.
 - `--version` flag.
+- Project logo. `assets/logo.svg` (square mark) and `assets/logo-hero.svg` (wide banner with
+  wordmark) are the vector sources, with rendered PNGs alongside. The README leads with the
+  hero. Absolute URL and PNG on purpose: the README is also the PyPI long description, which
+  cannot resolve relative paths and does not render SVG.
 
 ### Changed
 
@@ -45,6 +49,12 @@ All notable changes to claude-docsmith are documented here.
 
 ### Fixed
 
+- **Build metadata directories are no longer scanned.** An editable install leaves
+  `<package>.egg-info/` under `src/`, whose `PKG-INFO` duplicates the entire README into the
+  prompt while its five sibling files consume scan slots that should go to source — on this
+  repository, 6 of 40 slots against a context budget that was already saturated. `IGNORED_DIRS`
+  matches exact names, so suffix matching was added for `.egg-info`, `.dist-info` and `.egg`
+  (and `.ruff_cache` by name).
 - **The package was broken on Python 3.10**, the version `requires-python` declares as the
   floor. `_resolve_skill_root` called `Traversable.joinpath("resources", "update-docs")`, and
   multiple path segments per call are only accepted from Python 3.11 — on 3.10 every run
