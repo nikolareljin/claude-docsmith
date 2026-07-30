@@ -6,10 +6,15 @@ import json
 from pathlib import Path
 import sys
 
+from . import __version__, audiences, manifest as manifest_module
 from .models import GenerationResult, RepoSnapshot
 from .prompting import SkillRoot, build_prompt
 from .providers import ProviderError, generate_text
+from .redaction import format_findings, redact
 from .scanner import scan_repository
+
+EXIT_DRIFT = 1
+EXIT_SECRET_FOUND = 2
 
 
 def main() -> int:
@@ -20,20 +25,40 @@ def main() -> int:
     if not target_repo.exists():
         parser.error(f"Target repository does not exist: {target_repo}")
 
+    if args.check:
+        return _run_check(target_repo, args.docs_dir)
+
     snapshot = scan_repository(
         target_repo,
         max_files=args.max_files,
         max_bytes_per_file=args.max_bytes_per_file,
         max_context_bytes=args.max_context_kb * 1024,
         skip_tests=args.skip_tests,
+        redact_secrets=args.redact,
     )
 
+    _report_redactions(snapshot)
+    if args.fail_on_secret and snapshot.redactions:
+        print("\nSecret-shaped content found (values withheld):", file=sys.stderr)
+        print(format_findings(snapshot.redactions), file=sys.stderr)
+        return EXIT_SECRET_FOUND
+
+    selected = audiences.resolve(args.audience)
     skill_root = _resolve_skill_root()
-    prompt = build_prompt(snapshot, skill_root, skip_checklists=args.skip_checklists)
 
     if args.dry_run:
-        print(prompt)
-        _print_context_stats(snapshot, prompt)
+        for audience in selected:
+            prompt = build_prompt(
+                snapshot,
+                skill_root,
+                audience,
+                docs_dir=args.docs_dir,
+                skip_checklists=args.skip_checklists,
+            )
+            print(f"=== AUDIENCE: {audience.key} ===")
+            print(prompt)
+            _print_context_stats(snapshot, prompt)
+            print()
         return 0
 
     if args.input_json:
@@ -44,7 +69,7 @@ def main() -> int:
             return 1
         _print_result(result)
         if args.apply:
-            _apply_result(target_repo, result)
+            _apply_result(target_repo, result, args, snapshot)
         return 0
 
     if not args.provider:
@@ -54,29 +79,45 @@ def main() -> int:
         )
         return 1
 
-    _PROVIDER_DEFAULT_MODELS = {
-        "ollama": "llama3.1",
-        "claude": "claude-opus-4-6",
-    }
     model = args.model or _PROVIDER_DEFAULT_MODELS.get(args.provider, "")
 
-    try:
-        response_text = generate_text(args.provider, model, prompt, timeout=args.timeout)
-        result = GenerationResult.from_json_text(response_text)
-    except (ProviderError, json.JSONDecodeError) as exc:
-        print(f"Generation failed: {exc}", file=sys.stderr)
-        return 1
+    merged = GenerationResult(summary="")
+    summaries: list[str] = []
+    for audience in selected:
+        prompt = build_prompt(
+            snapshot,
+            skill_root,
+            audience,
+            docs_dir=args.docs_dir,
+            skip_checklists=args.skip_checklists,
+        )
+        try:
+            response_text = generate_text(args.provider, model, prompt, timeout=args.timeout)
+            result = GenerationResult.from_json_text(response_text, default_audience=audience.key)
+        except (ProviderError, json.JSONDecodeError) as exc:
+            print(f"Generation failed for the {audience.key} track: {exc}", file=sys.stderr)
+            return 1
+        summaries.append(f"[{audience.key}] {result.summary}".rstrip())
+        merged.files.extend(result.files)
+        merged.open_questions.extend(result.open_questions)
+        merged.follow_up_docs.extend(result.follow_up_docs)
+    merged.summary = "\n".join(summaries)
 
     if args.output_json:
-        output_path = Path(args.output_json)
-        output_path.write_text(_result_to_json(result), encoding="utf-8")
+        Path(args.output_json).write_text(_result_to_json(merged), encoding="utf-8")
 
-    _print_result(result)
+    _print_result(merged)
 
     if args.apply:
-        _apply_result(target_repo, result)
+        _apply_result(target_repo, merged, args, snapshot)
 
     return 0
+
+
+_PROVIDER_DEFAULT_MODELS = {
+    "ollama": "llama3.1",
+    "claude": "claude-opus-5",
+}
 
 
 def _resolve_skill_root() -> SkillRoot:
@@ -88,10 +129,23 @@ def _build_parser() -> argparse.ArgumentParser:
         description="Build Claude-ready documentation prompts and optionally run generation via Claude API or Ollama.",
     )
     parser.add_argument("target_repo", help="Path to the repository to document.")
+    parser.add_argument("--version", action="version", version=f"claude-docsmith {__version__}")
     parser.add_argument("--provider", choices=["ollama", "claude"])
     parser.add_argument("--model", required=False, default=None)
-    parser.add_argument("--dry-run", action="store_true", help="Print the assembled prompt instead of calling a model.")
+    parser.add_argument(
+        "--audience",
+        choices=list(audiences.CHOICES),
+        default="both",
+        help="Which documentation track to generate (default: both, one provider call each).",
+    )
+    parser.add_argument("--docs-dir", default="docs", help="Documentation root inside the target repo (default: docs).")
+    parser.add_argument("--dry-run", action="store_true", help="Print the assembled prompts instead of calling a model.")
     parser.add_argument("--apply", action="store_true", help="Write generated documentation files into the target repository.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Offline freshness check: compare the docs manifest against the current sources and exit 1 on drift.",
+    )
     parser.add_argument("--output-json", help="Write the structured model output to a JSON file.")
     parser.add_argument("--input-json", help="Read a previously generated JSON result and optionally apply it.")
     parser.add_argument("--max-files", type=int, default=40)
@@ -99,18 +153,104 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-context-kb", type=int, default=128, help="Total context byte budget in KB (default: 128).")
     parser.add_argument("--skip-tests", action="store_true", help="Exclude test files from the context.")
     parser.add_argument("--skip-checklists", action="store_true", help="Omit doc checklists from the prompt to save tokens.")
-    parser.add_argument("--timeout", type=int, default=180)
+    parser.add_argument(
+        "--no-redact",
+        dest="redact",
+        action="store_false",
+        help="Disable credential redaction. Sensitive files stay excluded regardless.",
+    )
+    parser.set_defaults(redact=True)
+    parser.add_argument(
+        "--fail-on-secret",
+        action="store_true",
+        help="Exit 2 when credential-shaped content is found. Values are never printed.",
+    )
+    parser.add_argument("--timeout", type=int, default=300)
     return parser
 
 
-def _apply_result(target_repo: Path, result: GenerationResult) -> None:
+def _run_check(target_repo: Path, docs_dir: str) -> int:
+    """Offline drift gate. Never contacts a provider."""
+    stored = manifest_module.read(target_repo, docs_dir)
+    if stored is None:
+        print(
+            f"No usable manifest at {manifest_module.manifest_path(target_repo, docs_dir)}. "
+            "Generate documentation first.",
+            file=sys.stderr,
+        )
+        return EXIT_DRIFT
+
+    snapshot = scan_repository(
+        target_repo,
+        max_files=stored.scan.max_files,
+        max_bytes_per_file=stored.scan.max_bytes_per_file,
+        max_context_bytes=stored.scan.max_context_kb * 1024,
+        skip_tests=stored.scan.skip_tests,
+        redact_secrets=stored.scan.redact_secrets,
+    )
+    current = manifest_module.source_hashes(snapshot, stored.docs_dir)
+    report = manifest_module.check_drift(target_repo, stored, current)
+
+    if report.has_drift:
+        print(f"Documentation is stale (generated {stored.generated_at}):")
+        print(report.render())
+        return EXIT_DRIFT
+
+    print(f"Documentation is current (generated {stored.generated_at}).")
+    if report.modified_docs:
+        print(report.render())
+    return 0
+
+
+def _apply_result(
+    target_repo: Path,
+    result: GenerationResult,
+    args: argparse.Namespace,
+    snapshot: RepoSnapshot,
+) -> None:
     target_repo = target_repo.resolve()
+    written: list[str] = []
     for item in result.files:
+        audience = audiences.by_key(item.audience)
+        if audience is None:
+            raise ValueError(f"Refusing to write file with unknown audience {item.audience!r}: {item.path}")
+        if not audiences.is_allowed_path(audience, item.path, args.docs_dir):
+            raise ValueError(
+                f"Refusing to write outside the {audience.key} track "
+                f"({audiences.track_root(audience, args.docs_dir)}): {item.path}"
+            )
         destination = (target_repo / item.path).resolve()
         if not destination.is_relative_to(target_repo):
             raise ValueError(f"Refusing to write outside target repository: {item.path}")
+
+        content = item.content
+        if args.redact:
+            content, findings = redact(content, path=item.path)
+            if findings:
+                print(
+                    f"Redacted {len(findings)} credential-shaped value(s) from generated {item.path}.",
+                    file=sys.stderr,
+                )
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text(item.content.rstrip() + "\n", encoding="utf-8")
+        destination.write_text(content.rstrip() + "\n", encoding="utf-8")
+        written.append(item.path)
+
+    scan = manifest_module.ScanSettings(
+        max_files=args.max_files,
+        max_bytes_per_file=args.max_bytes_per_file,
+        max_context_kb=args.max_context_kb,
+        skip_tests=args.skip_tests,
+        redact_secrets=args.redact,
+    )
+    doc_manifest = manifest_module.build(
+        snapshot=snapshot,
+        result=result,
+        tool_version=__version__,
+        docs_dir=args.docs_dir,
+        scan=scan,
+    )
+    path = manifest_module.write(target_repo, doc_manifest)
+    print(f"\nWrote {len(written)} file(s) and updated {path.relative_to(target_repo)}.")
 
 
 def _result_to_json(result: GenerationResult) -> str:
@@ -140,6 +280,21 @@ def _print_result(result: GenerationResult) -> None:
     print("\nPlanned files:")
     for item in result.files:
         print(f"- {item.path} ({item.audience}, {item.action})")
+
+
+def _report_redactions(snapshot: RepoSnapshot) -> None:
+    if snapshot.skipped_sensitive:
+        print(
+            f"Skipped {len(snapshot.skipped_sensitive)} sensitive file(s): "
+            + ", ".join(snapshot.skipped_sensitive[:10]),
+            file=sys.stderr,
+        )
+    if snapshot.redactions:
+        kinds = ", ".join(sorted({finding.kind for finding in snapshot.redactions}))
+        print(
+            f"Redacted {len(snapshot.redactions)} credential-shaped value(s) before prompting ({kinds}).",
+            file=sys.stderr,
+        )
 
 
 def _print_context_stats(snapshot: RepoSnapshot, prompt: str) -> None:

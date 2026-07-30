@@ -59,7 +59,7 @@ def _generate_claude(model: str, prompt: str, timeout: int) -> str:
         raise ProviderError("ANTHROPIC_API_KEY not set.")
     payload = {
         "model": model,
-        "max_tokens": 8192,
+        "max_tokens": 16000,
         "messages": [{"role": "user", "content": prompt}],
     }
     headers = {

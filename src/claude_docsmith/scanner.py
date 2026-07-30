@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from .models import RepoSnapshot, ScannedFile
+from .redaction import Finding, is_sensitive_path, redact
 
 
 DOC_CANDIDATES = [
@@ -81,10 +82,13 @@ def scan_repository(
     max_bytes_per_file: int = 8000,
     max_context_bytes: int = 128 * 1024,
     skip_tests: bool = False,
+    redact_secrets: bool = True,
 ) -> RepoSnapshot:
     root = root.resolve()
     scanned_files: list[ScannedFile] = []
     inventory: list[str] = []
+    redactions: list[Finding] = []
+    skipped_sensitive: list[str] = []
     total_bytes = 0
 
     def _add(path: Path, category: str) -> bool:
@@ -92,6 +96,10 @@ def scan_repository(
         if len(scanned_files) >= max_files:
             return False
         if skip_tests and category == "test":
+            return True
+        rel = path.relative_to(root).as_posix()
+        if is_sensitive_path(rel):
+            skipped_sensitive.append(rel)
             return True
         remaining_budget = max_context_bytes - total_bytes
         if remaining_budget <= 0:
@@ -104,7 +112,9 @@ def scan_repository(
         chunk = len(raw)
         total_bytes += chunk
         text = raw.decode("utf-8", errors="replace")
-        rel = path.relative_to(root).as_posix()
+        if redact_secrets:
+            text, findings = redact(text, path=rel)
+            redactions.extend(findings)
         scanned_files.append(ScannedFile(path=rel, category=category, content=text))
         inventory.append(rel)
         return True
@@ -143,6 +153,8 @@ def scan_repository(
         inventory=inventory,
         detected_language=detected_language,
         total_bytes=total_bytes,
+        redactions=redactions,
+        skipped_sensitive=sorted(set(skipped_sensitive)),
     )
 
 
