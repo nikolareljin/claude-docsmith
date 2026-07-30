@@ -2,6 +2,113 @@
 
 All notable changes to claude-docsmith are documented here.
 
+## [1.1.0] - 2026-07-30
+
+### Added
+
+- **Two-track generation** (#4). `--audience user|developer|both` (default `both`). Each track
+  gets its own prompt and its own provider call, so a complete user manual and a complete
+  developer reference no longer compete for a single output token budget.
+- **Audience-scoped output trees**. Generated files are written to `docs/user/**` and
+  `docs/developer/**`; a file outside its own track's root is rejected. The user track may
+  additionally write `README.md`. New `--docs-dir` flag relocates the documentation root.
+- **Secret redaction** (#5). A sensitive-filename deny list keeps `.env`, private keys,
+  keystores, `.netrc`, `.npmrc`, `.pypirc`, credential stores, and Terraform state from being
+  read at all. Credential-shaped values in files that are read are replaced with
+  `[REDACTED:<kind>]` markers, inbound (before prompting) and outbound (before `--apply`
+  writes). Findings record `path`, `line`, and `kind` only — never the value.
+  `--fail-on-secret` exits `2`; `--no-redact` disables content scrubbing but not the deny list.
+- **Documentation manifest and drift gate** (#6). `--apply` writes
+  `docs/.docsmith/manifest.json` recording every generated page, its track, and the hash of
+  every source it was derived from. `--check` re-scans and exits `1` on drift, `0` when
+  current, with no network request — usable as a CI freshness gate.
+- **Per-audience skill references** (#7). `SKILL.md` is now an orchestrator routing to
+  `references/user-manual.md` and `references/developer-reference.md`, plus page templates
+  under `templates/pages/`. Each track loads only its own reference and checklist.
+- `--version` flag.
+- Project logo. `assets/logo.svg` (square mark) and `assets/logo-hero.svg` (wide banner with
+  wordmark) are the vector sources, with rendered PNGs alongside. The README leads with the
+  hero. Absolute URL and PNG on purpose: the README is also the PyPI long description, which
+  cannot resolve relative paths and does not render SVG.
+
+### Changed
+
+- **No model identifier is hardcoded any more.** A pinned default goes stale on every model
+  release, and for Ollama it named a model the user may never have pulled. The model is now
+  resolved as `--model` > `DOCSMITH_<PROVIDER>_MODEL` > `DOCSMITH_MODEL` > provider discovery
+  (`GET /api/tags` for Ollama, newest by `created_at` from `GET /v1/models` for Claude). The
+  resolved name is printed to stderr when it was not given explicitly; if discovery cannot
+  run the tool exits 1 with guidance rather than guessing.
+  A unit test fails the build if a model name reappears in `src/claude_docsmith/*.py`.
+- Claude API `max_tokens` raised from 8192 to 16000, and the default `--timeout` from 180 to
+  300 seconds, to accommodate longer per-track responses.
+- `--dry-run` prints one prompt per selected track under an `=== AUDIENCE: <track> ===`
+  separator, each with its own context stats.
+- The `audience` field on generated files is now set from the track that produced the file
+  rather than taken from the model's own label.
+
+### Security
+
+- **`--check` treats the manifest as untrusted input.** `docs/.docsmith/manifest.json` lives
+  in the repository being checked, and `--check` is meant to be safe to run in CI against code
+  the operator does not control. Doc-entry paths were joined onto the repo root and read
+  directly, so an absolute path, a `..` segment or a symlink made the check stat and hash
+  files anywhere on the machine; missing or non-string keys raised an uncaught `KeyError`.
+  Paths are now resolved and confirmed to stay inside the repository, entries are type-checked,
+  and anything unusable is reported as drift under a new `invalid_entries` bucket instead of
+  being read.
+- **Scan settings replayed from the manifest are clamped.** `--check` fed `max_files`,
+  `max_bytes_per_file` and `max_context_kb` straight into the scanner, so a crafted value
+  turned a cheap offline check into reading the whole repository into memory. `--check` also
+  now takes `docs_dir` from the command line rather than from the file.
+- **A malformed manifest can no longer crash `read()`.** Non-dict payloads, wrong-typed
+  `tracks`/`sources`/`scan`/`redactions`, and non-string metadata are rejected or coerced
+  rather than raising.
+
+### Fixed
+
+- **`--apply` no longer writes a partial documentation tree.** Validation and writing were
+  interleaved, so a rejected path partway down the file list left the earlier files on disk
+  with no manifest and a traceback. All files are now validated and scrubbed before any of
+  them is written.
+- **Build metadata directories are no longer scanned.** An editable install leaves
+  `<package>.egg-info/` under `src/`, whose `PKG-INFO` duplicates the entire README into the
+  prompt while its five sibling files consume scan slots that should go to source — on this
+  repository, 6 of 40 slots against a context budget that was already saturated. `IGNORED_DIRS`
+  matches exact names, so suffix matching was added for `.egg-info`, `.dist-info` and `.egg`
+  (and `.ruff_cache` by name).
+- **The package was broken on Python 3.10**, the version `requires-python` declares as the
+  floor. `_resolve_skill_root` called `Traversable.joinpath("resources", "update-docs")`, and
+  multiple path segments per call are only accepted from Python 3.11 — on 3.10 every run
+  raised `TypeError`. Now one segment per call, with a regression test that rejects
+  multi-segment usage.
+
+### Build
+
+- Every runtime and dev dependency now carries an upper bound (`httpx>=0.27,<1.0`,
+  `ruff>=0.16,<0.17`, `pytest>=8.0,<10.0`, `build>=1.2.2,<2.0`, `setuptools>=68,<82`).
+  Dropped the redundant `wheel` build requirement. A test fails the build if an unbounded
+  requirement is added.
+- CI now runs the full matrix the classifiers advertise — 3.10, 3.11, 3.12 — instead of 3.11
+  alone, plus a `package` job that builds the sdist and wheel and smoke-tests the CLI
+  installed from each.
+- Added packaging guards: the version must agree across `pyproject.toml`, `plugin.json` and
+  `__init__.py`; the `requires-python` floor must match the lowest classifier; the
+  `package-data` globs must cover every packaged skill file.
+- Pinned the ruff rule set in `pyproject.toml` (`[tool.ruff.lint] select`) and raised the dev
+  floor to `ruff>=0.16`. Relying on ruff's default rule set made CI fail on an unrelated commit
+  the day 0.16 shipped and enabled `I`/`UP`/`ISC`/`C4` by default. Import blocks sorted and the
+  new findings fixed across the package, including files untouched by this release.
+
+### Notes
+
+- The output JSON contract is unchanged, so a 1.0.x payload still applies via `--input-json`
+  provided its paths fall inside a track root.
+
+[1.1.0]: https://github.com/nikolareljin/claude-docsmith/compare/1.0.1...1.1.0
+
+---
+
 ## [1.0.1] - 2026-05-27
 
 ### Fixed

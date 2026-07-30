@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from .models import RepoSnapshot, ScannedFile
-
+from .redaction import Finding, is_sensitive_path, redact
 
 DOC_CANDIDATES = [
     "README.md",
@@ -56,8 +56,19 @@ IGNORED_DIRS = {
     ".git", "node_modules", ".venv", "venv", "__pycache__",
     "dist", "build", "target", "vendor", ".next", ".nuxt",
     "coverage", ".tox", "htmlcov", ".mypy_cache", ".pytest_cache",
-    "out", "bin", "obj",
+    ".ruff_cache", "out", "bin", "obj",
 }
+
+# Build metadata directories are named after the package, so they cannot be
+# matched by name. An editable install leaves one under src/, where PKG-INFO
+# duplicates the whole README and the sibling files burn scan slots that should
+# go to source.
+IGNORED_DIR_SUFFIXES = (".egg-info", ".dist-info", ".egg")
+
+
+def _is_ignored_dir(name: str) -> bool:
+    return name in IGNORED_DIRS or name.endswith(IGNORED_DIR_SUFFIXES)
+
 
 _LANGUAGE_MANIFEST_MAP: dict[str, str] = {
     "pyproject.toml": "python",
@@ -81,10 +92,13 @@ def scan_repository(
     max_bytes_per_file: int = 8000,
     max_context_bytes: int = 128 * 1024,
     skip_tests: bool = False,
+    redact_secrets: bool = True,
 ) -> RepoSnapshot:
     root = root.resolve()
     scanned_files: list[ScannedFile] = []
     inventory: list[str] = []
+    redactions: list[Finding] = []
+    skipped_sensitive: list[str] = []
     total_bytes = 0
 
     def _add(path: Path, category: str) -> bool:
@@ -92,6 +106,10 @@ def scan_repository(
         if len(scanned_files) >= max_files:
             return False
         if skip_tests and category == "test":
+            return True
+        rel = path.relative_to(root).as_posix()
+        if is_sensitive_path(rel):
+            skipped_sensitive.append(rel)
             return True
         remaining_budget = max_context_bytes - total_bytes
         if remaining_budget <= 0:
@@ -104,7 +122,9 @@ def scan_repository(
         chunk = len(raw)
         total_bytes += chunk
         text = raw.decode("utf-8", errors="replace")
-        rel = path.relative_to(root).as_posix()
+        if redact_secrets:
+            text, findings = redact(text, path=rel)
+            redactions.extend(findings)
         scanned_files.append(ScannedFile(path=rel, category=category, content=text))
         inventory.append(rel)
         return True
@@ -143,6 +163,8 @@ def scan_repository(
         inventory=inventory,
         detected_language=detected_language,
         total_bytes=total_bytes,
+        redactions=redactions,
+        skipped_sensitive=sorted(set(skipped_sensitive)),
     )
 
 
@@ -158,7 +180,7 @@ def _walk_files(root: Path, *, skip_tests: bool = False):
         current_path = Path(current_root)
         pruned_dirs = (
             dirname for dirname in dirnames
-            if dirname not in IGNORED_DIRS and (not skip_tests or dirname not in TEST_DIR_NAMES)
+            if not _is_ignored_dir(dirname) and (not skip_tests or dirname not in TEST_DIR_NAMES)
         )
         dirnames[:] = sorted(pruned_dirs)
         filenames.sort()
@@ -167,7 +189,7 @@ def _walk_files(root: Path, *, skip_tests: bool = False):
 
 
 def _should_skip(path: Path, root: Path) -> bool:
-    return any(part in IGNORED_DIRS for part in path.relative_to(root).parts)
+    return any(_is_ignored_dir(part) for part in path.relative_to(root).parts)
 
 
 def _is_safe_file(path: Path, root: Path) -> bool:

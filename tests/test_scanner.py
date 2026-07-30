@@ -190,3 +190,77 @@ def test_inventory_paths_use_posix_separators(tmp_path: Path, monkeypatch: pytes
 
     assert "docs/guide.md" in snapshot.inventory
     assert "docs\\guide.md" not in snapshot.inventory
+
+
+def test_sensitive_files_are_never_scanned(tmp_path: Path) -> None:
+    # Planted inside a source directory, which the scanner does walk, so the
+    # deny list is what excludes them rather than the candidate list.
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+    (tmp_path / ".env.example").write_text("ANTHROPIC_API_KEY=your-key-here\n", encoding="utf-8")
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / ".env").write_text("ANTHROPIC_API_KEY=sk-ant-" + "A" * 24 + "\n", encoding="utf-8")
+    (src / "server.pem").write_text("-----BEGIN PRIVATE KEY-----\nnotarealkey\n", encoding="utf-8")
+    (src / "app.py").write_text("x = 1\n", encoding="utf-8")
+
+    snapshot = scan_repository(tmp_path, max_files=20, max_bytes_per_file=4096)
+
+    assert "src/.env" not in snapshot.inventory
+    assert "src/server.pem" not in snapshot.inventory
+    assert snapshot.skipped_sensitive == ["src/.env", "src/server.pem"]
+    assert "src/app.py" in snapshot.inventory
+    assert ".env.example" in snapshot.inventory
+    joined = "\n".join(item.content for item in snapshot.scanned_files)
+    assert "sk-ant-" not in joined
+    assert "notarealkey" not in joined
+
+
+def test_secrets_in_scanned_sources_are_redacted(tmp_path: Path) -> None:
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+    src = tmp_path / "src"
+    src.mkdir()
+    leaked = "ghp_" + "C" * 36
+    (src / "client.py").write_text(f'TOKEN = "{leaked}"\n', encoding="utf-8")
+
+    snapshot = scan_repository(tmp_path, max_files=20, max_bytes_per_file=4096)
+
+    joined = "\n".join(item.content for item in snapshot.scanned_files)
+    assert leaked not in joined
+    assert "[REDACTED:github-token]" in joined
+    assert [finding.kind for finding in snapshot.redactions] == ["github-token"]
+
+
+def test_redaction_can_be_disabled(tmp_path: Path) -> None:
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+    src = tmp_path / "src"
+    src.mkdir()
+    leaked = "ghp_" + "C" * 36
+    (src / "client.py").write_text(f'TOKEN = "{leaked}"\n', encoding="utf-8")
+
+    snapshot = scan_repository(tmp_path, max_files=20, max_bytes_per_file=4096, redact_secrets=False)
+
+    joined = "\n".join(item.content for item in snapshot.scanned_files)
+    assert leaked in joined
+    assert snapshot.redactions == []
+
+
+def test_build_metadata_directories_are_not_scanned(tmp_path: Path) -> None:
+    """An editable install leaves *.egg-info under src/, and its PKG-INFO
+    duplicates the entire README into the prompt."""
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("# Real readme\n", encoding="utf-8")
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "app.py").write_text("x = 1\n", encoding="utf-8")
+    for name in ("demo.egg-info", "demo.dist-info", "demo.egg"):
+        meta = src / name
+        meta.mkdir()
+        (meta / "PKG-INFO").write_text("# Real readme\n(duplicated)\n", encoding="utf-8")
+
+    snapshot = scan_repository(tmp_path, max_files=40, max_bytes_per_file=8000)
+
+    assert "src/app.py" in snapshot.inventory
+    assert not [path for path in snapshot.inventory if ".egg-info" in path]
+    assert not [path for path in snapshot.inventory if ".dist-info" in path]
+    joined = "\n".join(item.content for item in snapshot.scanned_files)
+    assert joined.count("# Real readme") == 1

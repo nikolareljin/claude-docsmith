@@ -11,117 +11,85 @@ Use this skill when:
 - a user asks to update documentation
 - code changes need both user-facing and developer-facing documentation
 
-## Goals
+## Two tracks, generated separately
 
-Maintain two distinct documentation tracks:
+This skill produces **two independent documentation trees**. Work one track at a
+time and finish it before starting the other. They have different readers,
+different vocabulary, and different completeness bars.
 
-1. Plain user documentation
-   - installation - only if the tool requires installation
-   - quick start
-   - common usage
-   - examples
-   - troubleshooting
-   - FAQ
-   - upgrade notes when relevant
+| Track | Reader | Output root | Detailed spec |
+|---|---|---|---|
+| User manual | Non-technical person using the product | `docs/user/` | `references/user-manual.md` |
+| Developer reference | Engineer reading, extending, or calling the code | `docs/developer/` | `references/developer-reference.md` |
 
-2. Developer documentation
-   - local setup
-   - architecture
-   - build/test/lint commands
-   - environment variables
-   - API contracts
-   - internal workflows
-   - contribution guidance
-   - deployment notes where appropriate
+Read the reference for the track you are writing. Read the matching checklist in
+`templates/` before declaring the track done. Page skeletons live in
+`templates/pages/`.
+
+Never mix tracks in one page. If a user page needs an implementation detail to
+make sense, link to the developer page instead of explaining it inline.
 
 ## Required behavior
 
 - Inspect the repository before editing docs.
 - Read existing documentation first.
 - Prefer updating existing docs over creating duplicates.
-- Do not invent features, commands, or behavior.
-- If behavior is unclear, infer only from code, config, tests, scripts, and existing docs.
-- Keep user documentation non-technical where possible.
-- Keep developer documentation precise and implementation-oriented.
+- Do not invent features, commands, behavior, endpoints, or parameters.
+- Infer only from code, config, tests, scripts, and existing docs.
+- Verify commands against package scripts, Makefiles, Dockerfiles, CI config, or source.
+- Verify APIs against actual routes, handlers, schemas, or tests.
 - Preserve concise structure and headings.
-- Include examples where useful.
-- When commands are documented, verify them against package scripts, Makefiles, Docker files, CI config, or source code.
-- When APIs are documented, verify against actual routes, handlers, schemas, or tests.
+- Remove stale or contradicting wording rather than leaving it beside new text.
 
-## Suggested file targets
+## Security
 
-Prioritize these when present:
-
-### User-facing
-
-- README.md
-- docs/user-guide.md
-- docs/getting-started.md
-- docs/installation.md
-- docs/troubleshooting.md
-- docs/faq.md
-
-### Developer-facing
-
-- docs/developer-guide.md
-- docs/architecture.md
-- docs/api.md
-- docs/contributing.md
-- CLAUDE.md, AGENTS.md, COPILOT.md
+- Never copy a credential, token, key, password, or connection string into documentation.
+- Content may arrive with `[REDACTED:kind]` markers. Never reproduce a marker and never
+  guess what it replaced. Document the setting by name and explain how a reader supplies
+  their own value.
+- Some files are deliberately not read (`.env`, private keys, credential stores). Do not
+  ask for them and do not describe their contents.
 
 ## Workflow
 
-1. Read:
-   - README.md
-   - docs/**
-   - CLAUDE.md
-   - package.json / pyproject.toml / go.mod / Cargo.toml / Makefile / Dockerfile / CI files
-   - source files relevant to changed behavior
-   - tests relevant to changed behavior
+1. Read: `README.md`, `docs/**`, `CLAUDE.md`, the build manifest
+   (`package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` / `Makefile` /
+   `Dockerfile` / CI files), source relevant to changed behavior, and the tests
+   that pin that behavior.
 
-2. Identify:
-   - what changed
-   - which docs are stale
-   - whether the change affects users, developers, or both
+2. Identify: what changed, which pages are stale, and whether the change affects
+   the user track, the developer track, or both.
 
-3. Update user docs:
-   - installation/setup
-   - usage steps
-   - examples
-   - troubleshooting
-   - limitations if relevant
+3. Write the user track against `references/user-manual.md`.
 
-4. Update developer docs:
-   - architecture or module notes
-   - setup/build/test instructions
-   - APIs/interfaces
-   - environment/config details
-   - contribution or workflow guidance
+4. Write the developer track against `references/developer-reference.md`.
 
-5. Summarize:
-   - Which files were updated
-   - what changed
-   - any remaining undocumented ambiguity
+5. Summarize: files updated, what changed, remaining ambiguity.
 
 ## Output format
 
 At the end, provide:
-- Updated files
+- Updated files, grouped by track
 - Key doc changes
 - Open questions or uncertainties
 - Suggested follow-up docs to add later
 
 ## Quality bar
 
-The documentation is complete only if:
-- plain users can install and use the project without reading source code
-- developers can set up, run, test, and modify the project without guesswork
-- commands and APIs match the actual implementation
-- stale or conflicting wording is removed
+Documentation is complete only when:
+- a non-technical reader can install and use the project without opening source
+- every user-visible option is documented with what it does and when to change it
+- a developer can set up, run, test, and extend the project without guesswork
+- every public endpoint, class, and function signature matches the implementation
+- commands are copy-pasteable and verified against the repository
 
 ## Templates
 
-Read these checklists when drafting or validating output:
-
+- `references/user-manual.md`
+- `references/developer-reference.md`
 - `templates/user-doc-checklist.md`
 - `templates/developer-doc-checklist.md`
+- `templates/pages/user-index.md`
+- `templates/pages/user-feature.md`
+- `templates/pages/api-endpoint.md`
+- `templates/pages/class-reference.md`

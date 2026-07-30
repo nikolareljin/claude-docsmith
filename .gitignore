@@ -7,3 +7,7 @@ build/
 .env
 docsmith-output.json
 docsmith-preview.md
+PLAN-*.md
+.remember/
+.ruff_cache/
+fix-publishing-docs.patch

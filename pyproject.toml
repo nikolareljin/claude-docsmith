@@ -1,16 +1,16 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68,<82"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-docsmith"
-version = "1.0.1"
+version = "1.1.0"
 description = "Generate user and developer documentation from a repository using Claude Code, with optional local Ollama fallback."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
-  "httpx>=0.27",
+  "httpx>=0.27,<1.0",
 ]
 authors = [
   { name = "Nikola Reljin" }
@@ -32,9 +32,9 @@ claude-docsmith = "claude_docsmith.cli:main"
 
 [project.optional-dependencies]
 dev = [
-  "build>=1.2.2",
-  "pytest>=8.0",
-  "ruff>=0.4",
+  "build>=1.2.2,<2.0",
+  "pytest>=8.0,<10.0",
+  "ruff>=0.16,<0.17",
 ]
 
 [tool.setuptools]
@@ -46,8 +46,18 @@ where = ["src"]
 [tool.setuptools.package-data]
 claude_docsmith = [
   "resources/update-docs/SKILL.md",
+  "resources/update-docs/references/*.md",
   "resources/update-docs/templates/*.md",
+  "resources/update-docs/templates/pages/*.md",
 ]
+
+[tool.ruff]
+line-length = 120
+
+# Pinned explicitly: ruff's default rule set changes between releases, so relying
+# on it makes CI fail on an unrelated commit the day a new ruff ships.
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "C4", "ISC"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

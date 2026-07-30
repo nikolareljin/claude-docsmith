@@ -33,7 +33,9 @@ python -m compileall src
 Run the CLI:
 
 ```bash
-claude-docsmith /path/to/repo --dry-run
+claude-docsmith /path/to/repo --dry-run                  # one prompt per track
+claude-docsmith /path/to/repo --dry-run --audience user  # single track
+claude-docsmith /path/to/repo --check                    # offline freshness gate
 ```
 
 Test the Claude plugin locally:
@@ -70,6 +72,13 @@ python3 -m build
 |----------|-------------|
 | `ANTHROPIC_API_KEY` | Required when using `--provider claude` |
 | `OLLAMA_BASE_URL` | Override Ollama server URL. Default: `http://127.0.0.1:11434` |
+| `DOCSMITH_CLAUDE_MODEL` | Model for `--provider claude` when `--model` is not given |
+| `DOCSMITH_OLLAMA_MODEL` | Model for `--provider ollama` when `--model` is not given |
+| `DOCSMITH_MODEL` | Model for any provider; lower precedence than the per-provider variables |
+
+`tests/test_providers.py::test_no_model_identifier_is_hardcoded` fails the build if a
+model name is ever pinned in `src/claude_docsmith/*.py`. Resolution order lives in
+`cli._resolve_model`; discovery lives in `providers.discover_model`.
 
 Full configuration reference: [`docs/configuration.md`](./configuration.md)
 
@@ -82,11 +91,17 @@ claude-docsmith/
 ├── .github/workflows/pr-gate.yml   PR gate via ci-helpers pr-gate preset
 ├── commands/nr-update-docs.md      namespaced Claude command entrypoint
 ├── docs/                           developer docs
-├── skills/update-docs/             skill definition and checklists
+├── skills/update-docs/
+│   ├── SKILL.md                    orchestrator; routes to one reference per track
+│   ├── references/                 per-audience specs (user manual, developer reference)
+│   └── templates/                  checklists and page skeletons
 ├── src/claude_docsmith/
-│   ├── cli.py                      CLI entrypoint and apply flow
-│   ├── scanner.py                  repository scanning and file selection
-│   ├── prompting.py                prompt assembly
+│   ├── cli.py                      CLI entrypoint, track loop, apply flow, drift gate
+│   ├── audiences.py                the two tracks: roots, references, path allowlists
+│   ├── scanner.py                  repository scanning, deny list, inbound redaction
+│   ├── redaction.py                sensitive-path deny list and credential scrubbing
+│   ├── prompting.py                per-track prompt assembly
+│   ├── manifest.py                 docs manifest, source hashing, drift detection
 │   ├── providers.py                Ollama and Claude API adapters
 │   └── models.py                   dataclasses and JSON parsing
 ├── tests/                          unit tests
@@ -124,9 +139,29 @@ CI uses reusable workflows from `nikolareljin/ci-helpers@production`:
 5. After merge, the `release-tag` CI workflow automatically creates and pushes the `X.Y.Z` tag.
 6. Users update with: `/plugin update claude-docsmith@nikolareljin-plugins`.
 
+## Editing the skill
+
+`skills/update-docs/` is mirrored byte-for-byte into
+`src/claude_docsmith/resources/update-docs/` so the packaged wheel carries the same
+files the plugin loads. `tests/test_resources.py` fails if the two diverge, so after
+editing the skill:
+
+```bash
+rm -rf src/claude_docsmith/resources/update-docs
+cp -r skills/update-docs src/claude_docsmith/resources/update-docs
+pytest tests/test_resources.py
+```
+
+New file types also need a glob in `[tool.setuptools.package-data]` in `pyproject.toml`,
+or they are silently missing from the wheel.
+
 ## Debugging tips
 
-- Use `--dry-run` to inspect the prompt and context stats without network calls.
+- Use `--dry-run` to inspect each track's prompt and context stats without network calls.
 - Use `--output-json` to save the raw structured result before applying.
-- If generation quality drops, inspect `skills/update-docs/SKILL.md` — it drives behavior more than the Python code.
-- If the prompt is too large, use `--skip-tests`, `--skip-checklists`, or lower `--max-context-kb`.
+- If generation quality drops, inspect the track's reference under
+  `skills/update-docs/references/` — those drive behavior more than the Python code.
+- If the prompt is too large, use `--skip-tests`, `--skip-checklists`, `--audience` to
+  generate one track at a time, or lower `--max-context-kb`.
+- `--fail-on-secret` prints `path:line kind` for every credential-shaped match without ever
+  printing the value; use it to audit a repository before pointing a provider at it.

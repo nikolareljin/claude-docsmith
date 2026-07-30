@@ -5,9 +5,40 @@ on:
   pull_request:
 
 jobs:
+  # Every version in the requires-python range and the classifiers, so the
+  # declared support floor is actually exercised rather than assumed.
   ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ["3.10", "3.11", "3.12"]
     uses: nikolareljin/ci-helpers/.github/workflows/python.yml@production
     with:
-      python_version: "3.11"
+      python_version: ${{ matrix.python_version }}
       lint_command: "pip install -e '.[dev]' && ruff check src tests"
       test_command: "pip install -e '.[dev]' && pytest && python -m compileall src"
+
+  # Proves the published artifacts install and run, not just the source tree.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Build sdist and wheel
+        run: |
+          pip install -e '.[dev]'
+          python -m build
+      - name: Install from wheel and smoke-test
+        run: |
+          python -m venv /tmp/wheel-env
+          /tmp/wheel-env/bin/pip install dist/*.whl
+          /tmp/wheel-env/bin/claude-docsmith --version
+          /tmp/wheel-env/bin/claude-docsmith . --dry-run --audience user > /dev/null
+      - name: Install from sdist and smoke-test
+        run: |
+          python -m venv /tmp/sdist-env
+          /tmp/sdist-env/bin/pip install dist/*.tar.gz
+          /tmp/sdist-env/bin/claude-docsmith --version
+          /tmp/sdist-env/bin/claude-docsmith . --dry-run --audience developer > /dev/null
