@@ -19,7 +19,7 @@ different vocabulary, and different completeness bars.
 
 | Track | Reader | Output root | Detailed spec |
 |---|---|---|---|
-| User manual | Non-technical person using the product | `docs/user/` | `references/user-manual.md` |
+| User manual | Non-technical person using the product | `docs/user/` | `references/user-manual.md`, then `references/screenshot-capture.md` |
 | Developer reference | Engineer reading, extending, or calling the code | `docs/developer/` | `references/developer-reference.md` |
 
 Read the reference for the track you are writing. Read the matching checklist in
@@ -61,6 +61,10 @@ make sense, link to the developer page instead of explaining it inline.
    the user track, the developer track, or both.
 
 3. Write the user track against `references/user-manual.md`.
+
+   When the project has a graphical, browser, mobile, desktop, or terminal
+   interface, also follow `references/screenshot-capture.md`. Capture requires
+   approval of the target and shot list before accessing a device or window.
 
 4. Write the developer track against `references/developer-reference.md`.
 

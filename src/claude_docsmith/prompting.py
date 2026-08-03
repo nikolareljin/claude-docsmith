@@ -41,6 +41,9 @@ def build_prompt(
         reference_text,
     ]
 
+    for relative in audience.supplemental_references:
+        sections += ["Supplemental reference:", _read(skill_root, relative)]
+
     if not skip_checklists:
         sections += [
             f"{audience.title} checklist:",
@@ -49,6 +52,12 @@ def build_prompt(
 
     if snapshot.redactions or snapshot.skipped_sensitive:
         sections.append(_redaction_notice(snapshot))
+
+    if audience.key == "user" and snapshot.image_inventory:
+        sections += [
+            "Existing repository image assets:",
+            "\n".join(f"- {path}" for path in snapshot.image_inventory),
+        ]
 
     sections += [
         "Repository inventory:",

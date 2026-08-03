@@ -65,6 +65,9 @@ IGNORED_DIRS = {
 # go to source.
 IGNORED_DIR_SUFFIXES = (".egg-info", ".dist-info", ".egg")
 
+IMAGE_ROOTS = ("docs", "assets", "screenshots", ".github", "static", "public")
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
+
 
 def _is_ignored_dir(name: str) -> bool:
     return name in IGNORED_DIRS or name.endswith(IGNORED_DIR_SUFFIXES)
@@ -100,9 +103,12 @@ def scan_repository(
     redactions: list[Finding] = []
     skipped_sensitive: list[str] = []
     total_bytes = 0
+    image_inventory = _discover_images(root)
 
     def _add(path: Path, category: str) -> bool:
         nonlocal total_bytes
+        if path.suffix.lower() in IMAGE_SUFFIXES:
+            return True
         if len(scanned_files) >= max_files:
             return False
         if skip_tests and category == "test":
@@ -165,7 +171,22 @@ def scan_repository(
         total_bytes=total_bytes,
         redactions=redactions,
         skipped_sensitive=sorted(set(skipped_sensitive)),
+        image_inventory=image_inventory,
     )
+
+
+def _discover_images(root: Path) -> list[str]:
+    """Return a stable inventory of safe image assets without reading them."""
+    discovered: set[str] = set()
+    for relative_root in IMAGE_ROOTS:
+        candidate = root / relative_root
+        if not _is_safe_dir(candidate, root):
+            continue
+        for path in _walk_files(candidate):
+            if path.suffix.lower() not in IMAGE_SUFFIXES or not _is_safe_file(path, root):
+                continue
+            discovered.add(path.relative_to(root).as_posix())
+    return sorted(discovered)
 
 
 def _detect_language(root: Path) -> str:

@@ -34,6 +34,9 @@ The intended workflow:
 ## What is included
 
 - A reusable `update-docs` skill under [`skills/update-docs`](./skills/update-docs)
+- Screenshot-aware user documentation that discovers existing images and can use
+  approved local browser, mobile, CLI, or desktop capture tools when the application
+  is available
 - A Claude Code command under [`commands/nr-update-docs.md`](./commands/nr-update-docs.md)
 - An official Claude plugin manifest under [`.claude-plugin/plugin.json`](./.claude-plugin/plugin.json)
 - A Python CLI that:
@@ -65,7 +68,7 @@ The intended workflow:
 **Step 3 — Restart Claude Code**, then run:
 
 ```
-/nr-update-docs
+/claude-docsmith:nr-update-docs
 ```
 
 ### Install scopes
@@ -110,7 +113,7 @@ pip install --user git+https://github.com/nikolareljin/claude-docsmith.git
 Pin a released version by appending a tag:
 
 ```bash
-pipx install git+https://github.com/nikolareljin/claude-docsmith.git@1.1.1
+pipx install git+https://github.com/nikolareljin/claude-docsmith.git@1.3.0
 ```
 
 **From source (for development)**
@@ -141,7 +144,7 @@ claude
 Then:
 
 ```
-/nr-update-docs
+/claude-docsmith:nr-update-docs
 ```
 
 ### CLI with Claude API
@@ -270,6 +273,7 @@ docs/
     index.md  getting-started.md
     features/<slug>.md
     screenshots/
+      manifest.yml          stable list of present and missing shots
     troubleshooting.md  faq.md
   developer/                engineering reference
     index.md  architecture.md
@@ -282,16 +286,38 @@ docs/
 The manifest is what makes `--check` possible and is the ingestion point for
 publishing the docs elsewhere.
 
+### Screenshots in the user manual
+
+The user track inventories existing PNG, JPEG, GIF, WebP, and SVG assets without
+reading their binary content into the prompt. Suitable current images are reused.
+When local capture is available, the skill proposes a target and a short list of
+key states, then waits for approval before accessing a device or window.
+
+Capture selection follows the interface:
+
+- Playwright for browser pages
+- ADB for approved Android devices and emulators
+- installed Apple debugging tools for supported simulators or approved devices
+- an installed CLI/TUI screenshot utility for terminal interfaces
+- the operating system's window or region tool for desktop applications
+
+Real captures are stored under `docs/user/screenshots/` and tracked in
+`docs/user/screenshots/manifest.yml`. Each entry has a stable id, page, caption,
+alt text, reproduction steps, and either a file or an actionable blocker. Missing
+shots appear as visible callouts rather than broken image links. Every capture is
+inspected, and screens containing credentials or personal information are
+recaptured with controlled demo data before use.
+
+
 ---
 
 ## Repository layout
-
 ```text
 claude-docsmith/
 ├── .claude-plugin/plugin.json      plugin manifest
 ├── assets/                         logo sources (SVG) and rendered PNGs
 ├── site/                           GitHub Pages landing page
-├── commands/nr-update-docs.md      Claude Code slash command (/nr-update-docs)
+├── commands/nr-update-docs.md      Claude Code slash command (/claude-docsmith:nr-update-docs)
 ├── skills/update-docs/             skill definition, per-audience references, checklists, page templates
 ├── src/claude_docsmith/            CLI source
 └── tests/                          unit tests

@@ -19,9 +19,15 @@ Verify every item before declaring the user track complete.
 
 ## Screenshots
 
+- [ ] Existing repository images reviewed before requesting new captures
+- [ ] Capture target and shot list approved before accessing a device or window
+- [ ] Key states use real, inspected captures rather than mockups
 - [ ] Every screenshot referenced with a stable kebab-case id
 - [ ] Alt text describes what the image shows
 - [ ] No broken image links
+- [ ] `screenshots/manifest.yml` is sorted by id and records every present or missing shot
+- [ ] Missing shots use visible callouts with reproducible steps and a concrete blocker
+- [ ] No screenshot contains credentials, personal data, device ids, or account details
 
 ## Tone
 

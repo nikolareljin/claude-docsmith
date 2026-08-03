@@ -2,8 +2,45 @@
 
 All notable changes to claude-docsmith are documented here.
 
-## [1.1.1] - 2026-07-30
+## [1.3.0] - 2026-08-03
 
+### Added
+
+- Repository image discovery for PNG, JPEG, GIF, WebP, and SVG assets under common
+  documentation and asset directories. The user-documentation prompt receives a stable,
+  deduplicated inventory without reading binary content.
+- A screenshot capture workflow for browser, Android, Apple, terminal, and desktop
+  interfaces. It reuses current images, requests approval for the target and shot list,
+  captures key states with locally available tools, and inspects every result before use.
+- A stable `docs/user/screenshots/manifest.yml` contract for present and missing shots,
+  including descriptive alt text, reproduction steps, and actionable blockers.
+
+### Changed
+
+- Binary images no longer consume text scan slots or context bytes.
+- Missing screenshots render as visible callouts instead of broken image references.
+- Plugin usage examples now use the registered namespaced slash command; the previous
+  short form was not recognised by a locally loaded plugin.
+- Screenshot capture continues documentation updates when no suitable local target is
+  available and never reports an unavailable capture as completed.
+
+### Security
+
+- Physical devices, windows, and desktop regions require explicit approval before capture.
+- Captures use controlled demo data; images containing credentials, personal information,
+  account details, or device identifiers must be recaptured before they enter documentation.
+
+### Tests
+
+- Added coverage for image formats, stable ordering, deduplication, scan-budget isolation,
+  symlink containment, audience-specific prompting, and packaged skill parity.
+
+[1.3.0]: https://github.com/nikolareljin/claude-docsmith/compare/1.1.1...1.3.0
+
+---
+
+
+## [1.1.1] - 2026-07-30
 ### Fixed
 
 - **`Release Tag` workflow failed to start.** It called `ci-helpers`'

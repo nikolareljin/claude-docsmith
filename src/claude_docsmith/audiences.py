@@ -21,6 +21,7 @@ class Audience:
     checklist: str
     extra_allowed_paths: tuple[str, ...]
     contract_hint: str
+    supplemental_references: tuple[str, ...] = ()
 
 
 USER = Audience(
@@ -47,6 +48,7 @@ USER = Audience(
         "internal type names, no module paths, no code blocks unless the reader types "
         "that text themselves."
     ),
+    supplemental_references=("references/screenshot-capture.md",),
 )
 
 DEVELOPER = Audience(

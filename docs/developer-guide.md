@@ -47,7 +47,7 @@ claude --plugin-dir .
 Then inside Claude Code:
 
 ```text
-/nr-update-docs
+/claude-docsmith:nr-update-docs
 /reload-plugins
 ```
 

@@ -80,6 +80,19 @@ def test_pages_workflow_publishes_the_site_directory() -> None:
     assert "path: site" in workflow
 
 
+def test_documentation_image_references_resolve() -> None:
+    missing: list[str] = []
+    for page in (REPO_ROOT / "docs").rglob("*.md"):
+        markdown = page.read_text(encoding="utf-8")
+        for target in re.findall(r"!\[[^]]*\]\(([^)]+)\)", markdown):
+            if target.startswith(("http://", "https://", "data:")):
+                continue
+            if not (page.parent / target).resolve().is_file():
+                missing.append(f"{page.relative_to(REPO_ROOT)} -> {target}")
+
+    assert missing == []
+
+
 def test_version_strings_in_docs_match_the_package() -> None:
     """The site and README bake in a version. Without this they quietly go stale
     one release after someone bumps the package -- the same class of wrong
