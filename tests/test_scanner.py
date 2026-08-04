@@ -319,3 +319,33 @@ def test_image_inventory_rejects_symlinked_files_outside_root(tmp_path: Path) ->
     snapshot = scan_repository(tmp_path)
 
     assert snapshot.image_inventory == []
+
+
+def test_image_inventory_honors_configured_limit(tmp_path: Path) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    for index in range(5):
+        (assets / f"image-{index}.png").write_bytes(b"image")
+
+    snapshot = scan_repository(tmp_path, max_images=3)
+
+    assert snapshot.image_inventory == [
+        "assets/image-0.png",
+        "assets/image-1.png",
+        "assets/image-2.png",
+    ]
+
+
+def test_zero_image_limit_skips_discovery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    (assets / "image.png").write_bytes(b"image")
+
+    def fail_walk(*args, **kwargs):  # type: ignore[no-untyped-def]
+        pytest.fail("image discovery should not walk files when max_images is zero")
+
+    monkeypatch.setattr("claude_docsmith.scanner._walk_files", fail_walk)
+
+    snapshot = scan_repository(tmp_path, max_files=0, max_images=0)
+
+    assert snapshot.image_inventory == []

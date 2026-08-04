@@ -2,7 +2,7 @@ from pathlib import Path
 
 from claude_docsmith import audiences
 from claude_docsmith.models import RepoSnapshot, ScannedFile
-from claude_docsmith.prompting import build_prompt
+from claude_docsmith.prompting import MAX_PROMPT_IMAGES, build_prompt
 from claude_docsmith.redaction import Finding
 
 
@@ -95,3 +95,16 @@ def test_existing_images_are_listed_only_for_the_user_track(tmp_path: Path) -> N
     assert "docs/screenshots/login.webp" in user
     assert "Existing repository image assets:" not in developer
     assert "assets/dashboard.png" not in developer
+
+
+def test_existing_images_are_bounded_in_the_user_prompt(tmp_path: Path) -> None:
+    snapshot = _make_snapshot(tmp_path)
+    snapshot.image_inventory = [
+        f"assets/image-{index:03}.png" for index in range(MAX_PROMPT_IMAGES + 2)
+    ]
+
+    prompt = build_prompt(snapshot, _skill_root(), audiences.USER)
+
+    assert f"assets/image-{MAX_PROMPT_IMAGES - 1:03}.png" in prompt
+    assert f"assets/image-{MAX_PROMPT_IMAGES:03}.png" not in prompt
+    assert "2 more image asset(s) omitted" in prompt

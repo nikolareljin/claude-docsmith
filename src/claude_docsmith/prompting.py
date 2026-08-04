@@ -6,6 +6,8 @@ from .audiences import Audience, track_root
 from .models import RepoSnapshot
 from .redaction import MARKER_TEMPLATE
 
+MAX_PROMPT_IMAGES = 50
+
 
 class SkillRoot(Protocol):
     def joinpath(self, *pathsegments: str) -> SkillRoot: ...
@@ -54,9 +56,14 @@ def build_prompt(
         sections.append(_redaction_notice(snapshot))
 
     if audience.key == "user" and snapshot.image_inventory:
+        rendered_images = snapshot.image_inventory[:MAX_PROMPT_IMAGES]
+        omitted_images = len(snapshot.image_inventory) - len(rendered_images)
+        image_lines = [f"- {path}" for path in rendered_images]
+        if omitted_images:
+            image_lines.append(f"- ... and {omitted_images} more image asset(s) omitted")
         sections += [
             "Existing repository image assets:",
-            "\n".join(f"- {path}" for path in snapshot.image_inventory),
+            "\n".join(image_lines),
         ]
 
     sections += [

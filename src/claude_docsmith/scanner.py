@@ -67,6 +67,8 @@ IGNORED_DIR_SUFFIXES = (".egg-info", ".dist-info", ".egg")
 
 IMAGE_ROOTS = ("docs", "assets", "screenshots", ".github", "static", "public")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
+DEFAULT_MAX_IMAGES = 200
+IMAGE_SCAN_MULTIPLIER = 10
 
 
 def _is_ignored_dir(name: str) -> bool:
@@ -96,6 +98,7 @@ def scan_repository(
     max_context_bytes: int = 128 * 1024,
     skip_tests: bool = False,
     redact_secrets: bool = True,
+    max_images: int = DEFAULT_MAX_IMAGES,
 ) -> RepoSnapshot:
     root = root.resolve()
     scanned_files: list[ScannedFile] = []
@@ -103,7 +106,7 @@ def scan_repository(
     redactions: list[Finding] = []
     skipped_sensitive: list[str] = []
     total_bytes = 0
-    image_inventory = _discover_images(root)
+    image_inventory = _discover_images(root, max_images=max_images)
 
     def _add(path: Path, category: str) -> bool:
         nonlocal total_bytes
@@ -175,17 +178,27 @@ def scan_repository(
     )
 
 
-def _discover_images(root: Path) -> list[str]:
-    """Return a stable inventory of safe image assets without reading them."""
+def _discover_images(root: Path, *, max_images: int = DEFAULT_MAX_IMAGES) -> list[str]:
+    """Return a bounded, stable inventory of safe image assets without reading them."""
+    if max_images <= 0:
+        return []
+
     discovered: set[str] = set()
+    scanned_paths = 0
+    max_scanned_paths = max_images * IMAGE_SCAN_MULTIPLIER
     for relative_root in IMAGE_ROOTS:
         candidate = root / relative_root
         if not _is_safe_dir(candidate, root):
             continue
         for path in _walk_files(candidate):
+            scanned_paths += 1
+            if scanned_paths > max_scanned_paths:
+                return sorted(discovered)
             if path.suffix.lower() not in IMAGE_SUFFIXES or not _is_safe_file(path, root):
                 continue
             discovered.add(path.relative_to(root).as_posix())
+            if len(discovered) >= max_images:
+                return sorted(discovered)
     return sorted(discovered)
 
 
