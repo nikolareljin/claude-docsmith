@@ -1,0 +1,30 @@
+/* Shared suite layer: keep these tokens and product-card patterns aligned across sites. */
+:root {
+  --suite-surface: #100e16;
+  --suite-surface-raised: #17141f;
+  --suite-border: #2c3a4e;
+  --suite-text: #e7ecf3;
+  --suite-muted: #8a99ad;
+  --suite-accent: #f97316;
+  --suite-secondary: #38bdf8;
+}
+.section--ecosystem { background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.035)); }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1rem; }
+.product-card {
+  display: flex; min-height: 12rem; flex-direction: column; gap: 0.65rem; padding: 1.4rem;
+  color: var(--suite-text); background: var(--suite-surface); border: 1px solid var(--suite-border);
+  border-radius: 0.4rem; text-decoration: none;
+  transition: border-color 140ms ease, transform 140ms ease, background-color 140ms ease;
+}
+.product-card:hover { border-color: var(--suite-secondary); background: var(--suite-surface-raised); transform: translateY(-2px); }
+.product-card--hub { border-color: color-mix(in srgb, var(--suite-accent) 65%, var(--suite-border)); }
+.product-card__type {
+  font-family: var(--mono); color: var(--suite-muted); font-size: 0.7rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.product-card strong { font-family: var(--display); font-size: 1.2rem; }
+.product-card > span:last-child { color: var(--suite-muted); font-size: 0.95rem; }
+@media (prefers-reduced-motion: reduce) {
+  .product-card { transition: none; }
+  .product-card:hover { transform: none; }
+}
