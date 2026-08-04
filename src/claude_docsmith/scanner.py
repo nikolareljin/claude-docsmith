@@ -186,16 +186,16 @@ def _discover_images(root: Path, *, max_images: int = DEFAULT_MAX_IMAGES) -> lis
         return []
 
     discovered: set[str] = set()
-    scanned_paths = 0
-    max_scanned_paths = max_images * IMAGE_SCAN_MULTIPLIER
+    max_scanned_paths_per_root = max_images * IMAGE_SCAN_MULTIPLIER
     for relative_root in IMAGE_ROOTS:
         candidate = root / relative_root
         if not _is_safe_dir(candidate, root):
             continue
+        scanned_paths = 0
         for path in _walk_files(candidate):
             scanned_paths += 1
-            if scanned_paths > max_scanned_paths:
-                return sorted(discovered)
+            if scanned_paths > max_scanned_paths_per_root:
+                break
             if path.suffix.lower() not in IMAGE_SUFFIXES or not _is_safe_file(path, root):
                 continue
             relative_path = path.relative_to(root).as_posix()

@@ -401,3 +401,17 @@ def test_image_inventory_validates_internal_symlink_targets(
     snapshot = scan_repository(tmp_path)
 
     assert snapshot.image_inventory == []
+
+
+def test_image_scan_budget_does_not_starve_later_roots(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    for index in range(11):
+        (docs / f"document-{index}.txt").write_text("text\n", encoding="utf-8")
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    (assets / "diagram.png").write_bytes(b"image")
+
+    snapshot = scan_repository(tmp_path, max_files=0, max_images=1)
+
+    assert snapshot.image_inventory == ["assets/diagram.png"]
