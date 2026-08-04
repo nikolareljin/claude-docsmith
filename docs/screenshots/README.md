@@ -1,10 +1,12 @@
 # Screenshots
 
-Screenshots here are referenced from `docs/demo.md`. Add PNG files captured from real Claude Code sessions.
+Screenshots here are referenced from `docs/demo.md`. They are real PNG captures
+from a controlled session, reviewed for readable state and sensitive content
+before being added.
 
 | File | Content |
 |------|---------|
-| `install.png` | Plugin install command output |
-| `invoke.png` | `/claude-docsmith:update-docs` in Claude Code |
-| `review.png` | Claude listing proposed documentation files |
-| `result.png` | Updated documentation file in editor |
+| `install.png` | Plugin manifest validation output |
+| `invoke.png` | User-track dry-run context summary |
+| `review.png` | Proposed user documentation file |
+| `result.png` | Completed documentation update |

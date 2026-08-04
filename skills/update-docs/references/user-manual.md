@@ -57,7 +57,9 @@ Real questions a non-technical reader asks. Prefer questions answered by the cod
 
 Reference images as `![clear description](screenshots/<id>.png)` with a stable
 kebab-case id matching the feature. Alt text describes what the image shows, not
-"screenshot".
+"screenshot". Follow `screenshot-capture.md` to reuse existing assets, capture
+real application states when local tools are available, and maintain
+`screenshots/manifest.yml` without broken image links.
 
 ## Writing rules
 

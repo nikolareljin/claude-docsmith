@@ -24,6 +24,7 @@ class RepoSnapshot:
     total_bytes: int = 0
     redactions: list[Finding] = field(default_factory=list)
     skipped_sensitive: list[str] = field(default_factory=list)
+    image_inventory: list[str] = field(default_factory=list)
 
     @property
     def redaction_summary(self) -> list[dict[str, object]]:

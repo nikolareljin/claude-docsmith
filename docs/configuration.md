@@ -112,6 +112,7 @@ docs/
     index.md  getting-started.md
     features/<slug>.md
     screenshots/
+      manifest.yml          stable list of present and missing shots
     troubleshooting.md  faq.md
   developer/                engineering reference
     index.md  architecture.md

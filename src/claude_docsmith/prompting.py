@@ -6,6 +6,8 @@ from .audiences import Audience, track_root
 from .models import RepoSnapshot
 from .redaction import MARKER_TEMPLATE
 
+MAX_PROMPT_IMAGES = 50
+
 
 class SkillRoot(Protocol):
     def joinpath(self, *pathsegments: str) -> SkillRoot: ...
@@ -41,6 +43,9 @@ def build_prompt(
         reference_text,
     ]
 
+    for relative in audience.supplemental_references:
+        sections += ["Supplemental reference:", _read(skill_root, relative)]
+
     if not skip_checklists:
         sections += [
             f"{audience.title} checklist:",
@@ -49,6 +54,17 @@ def build_prompt(
 
     if snapshot.redactions or snapshot.skipped_sensitive:
         sections.append(_redaction_notice(snapshot))
+
+    if audience.key == "user" and snapshot.image_inventory:
+        rendered_images = snapshot.image_inventory[:MAX_PROMPT_IMAGES]
+        omitted_images = len(snapshot.image_inventory) - len(rendered_images)
+        image_lines = [f"- {path}" for path in rendered_images]
+        if omitted_images:
+            image_lines.append(f"- ... and {omitted_images} more image asset(s) omitted")
+        sections += [
+            "Existing repository image assets:",
+            "\n".join(image_lines),
+        ]
 
     sections += [
         "Repository inventory:",

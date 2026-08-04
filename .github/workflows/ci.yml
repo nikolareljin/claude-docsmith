@@ -15,6 +15,7 @@ jobs:
     uses: nikolareljin/ci-helpers/.github/workflows/python.yml@production
     with:
       python_version: ${{ matrix.python_version }}
+      concurrency_key: python-${{ matrix.python_version }}
       lint_command: "pip install -e '.[dev]' && ruff check src tests scripts"
       test_command: "pip install -e '.[dev]' && pytest && python -m compileall src scripts"
 

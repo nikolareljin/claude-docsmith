@@ -11,7 +11,7 @@ Publishing a new version is a branch, bump, PR, merge, and tag cycle.
 | File | Purpose |
 |------|---------|
 | `.claude-plugin/plugin.json` | Plugin manifest — version shown to Claude Code |
-| `commands/nr-update-docs.md` | Claude Code slash command entrypoint (`/nr-update-docs`) |
+| `commands/nr-update-docs.md` | Claude Code slash command entrypoint (`/claude-docsmith:nr-update-docs`) |
 | `skills/update-docs/SKILL.md` | Core skill behavior |
 | `pyproject.toml` | Python package version |
 | `src/claude_docsmith/__init__.py` | Python runtime version |
@@ -79,7 +79,7 @@ claude --plugin-dir .
 Inside Claude Code:
 
 ```text
-/nr-update-docs
+/claude-docsmith:nr-update-docs
 ```
 
 6. Commit, push the branch, and open a PR against `main`:

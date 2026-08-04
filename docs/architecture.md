@@ -6,11 +6,14 @@
 
 1. The CLI receives a target repository path, an audience selection, and provider settings.
 2. The scanner inspects common docs, config files, scripts, CI files, source trees, and tests.
+   Supported image assets are inventoried separately, so binary content consumes neither
+   text scan slots nor context bytes.
    Sensitive filenames are skipped outright; credential-shaped content in the files it does
    read is replaced with `[REDACTED:<kind>]` markers before anything is assembled.
 3. For **each selected track**, the prompt builder embeds:
    - the `update-docs` skill
    - that track's reference (`references/user-manual.md` or `references/developer-reference.md`)
+   - the screenshot capture reference and existing image inventory for the user track
    - that track's checklist
    - a JSON contract pinning output paths to that track's root
    - a compact repository inventory and excerpts from relevant files
@@ -32,7 +35,7 @@ For Claude Code plugin usage, the plugin manifest in `.claude-plugin/plugin.json
 | Module | Responsibility |
 |---|---|
 | `audiences.py` | The two tracks: output root, skill reference, checklist, path allowlist, page-set contract |
-| `scanner.py` | Bounded repository scan; applies the sensitive-file deny list and inbound redaction |
+| `scanner.py` | Bounded text scan plus safe image inventory; applies the sensitive-file deny list and inbound redaction |
 | `redaction.py` | Sensitive-name deny list and credential pattern scrubbing; findings carry no values |
 | `prompting.py` | Assembles one prompt per track |
 | `providers.py` | Claude API and Ollama HTTP calls with retry |
@@ -58,16 +61,16 @@ For Claude Code plugin usage, the plugin manifest in `.claude-plugin/plugin.json
 ## Boundaries
 
 - The tool does not mutate source code.
-- It does not run project-specific build or test commands in the target repository.
+- The Python CLI does not run project-specific commands. The interactive skill may use
+  approved project start commands and local capture tools for the user-documentation track.
 - It does not infer undocumented behavior beyond code, config, tests, and existing docs.
 
 ## Future extensions
 
 - API surface extractor (Python AST, OpenAPI specs, route decorators, versioned endpoints)
 - Exporters: GitHub Pages (MkDocs Material), GitHub wiki, NotebookLM bundles
-- Screenshot discovery and a capture spec for missing shots
 - Diff-aware updates against git history (`--since <ref>`)
 - `.docsmith.toml` configuration file
 - Multi-turn repair when the first model response is not valid JSON
 
-Tracked as issues #8–#15 in the repository.
+Tracked as issues #8–#11 and #13–#15 in the repository.

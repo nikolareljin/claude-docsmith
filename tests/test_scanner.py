@@ -114,7 +114,9 @@ def test_symlinked_directory_outside_root_is_skipped(tmp_path: Path) -> None:
     assert "docs/secret.md" not in scanned_paths
 
 
-def test_symlinked_candidate_directory_outside_root_is_not_walked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_symlinked_candidate_directory_outside_root_is_not_walked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     external_root = tmp_path.parent / f"{tmp_path.name}-external-docs"
     external_root.mkdir()
     docs_link = tmp_path / "docs"
@@ -264,3 +266,152 @@ def test_build_metadata_directories_are_not_scanned(tmp_path: Path) -> None:
     assert not [path for path in snapshot.inventory if ".dist-info" in path]
     joined = "\n".join(item.content for item in snapshot.scanned_files)
     assert joined.count("# Real readme") == 1
+
+
+def test_image_inventory_is_sorted_deduplicated_and_separate_from_text(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    nested = docs / "screenshots"
+    nested.mkdir(parents=True)
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    public = tmp_path / "public"
+    public.mkdir()
+
+    (nested / "z-screen.PNG").write_bytes(b"\x89PNG\r\n\x1a\nnot-text")
+    (assets / "a-screen.webp").write_bytes(b"RIFFnot-text")
+    (public / "ignored.txt").write_text("text\n", encoding="utf-8")
+    (docs / "guide.md").write_text("guide\n", encoding="utf-8")
+
+    snapshot = scan_repository(tmp_path, max_files=1, max_context_bytes=5)
+
+    assert snapshot.image_inventory == [
+        "assets/a-screen.webp",
+        "docs/screenshots/z-screen.PNG",
+    ]
+    assert [item.path for item in snapshot.scanned_files] == ["docs/guide.md"]
+    assert snapshot.total_bytes == 5
+    assert not set(snapshot.image_inventory) & set(snapshot.inventory)
+
+
+@pytest.mark.parametrize("suffix", [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"])
+def test_image_inventory_supports_documented_extensions(tmp_path: Path, suffix: str) -> None:
+    static = tmp_path / "static"
+    static.mkdir()
+    image = static / f"feature{suffix}"
+    image.write_bytes(b"image")
+
+    snapshot = scan_repository(tmp_path)
+
+    assert snapshot.image_inventory == [f"static/feature{suffix}"]
+
+
+def test_image_inventory_rejects_symlinked_files_outside_root(tmp_path: Path) -> None:
+    external = tmp_path.parent / f"{tmp_path.name}-external-image.png"
+    external.write_bytes(b"image")
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    link = assets / "external.png"
+    try:
+        link.symlink_to(external)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+
+    snapshot = scan_repository(tmp_path)
+
+    assert snapshot.image_inventory == []
+
+
+def test_image_inventory_honors_configured_limit(tmp_path: Path) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    for index in range(5):
+        (assets / f"image-{index}.png").write_bytes(b"image")
+
+    snapshot = scan_repository(tmp_path, max_images=3)
+
+    assert snapshot.image_inventory == [
+        "assets/image-0.png",
+        "assets/image-1.png",
+        "assets/image-2.png",
+    ]
+
+
+def test_zero_image_limit_skips_discovery(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    (assets / "image.png").write_bytes(b"image")
+
+    def fail_walk(*args, **kwargs):  # type: ignore[no-untyped-def]
+        pytest.fail("image discovery should not walk files when max_images is zero")
+
+    monkeypatch.setattr("claude_docsmith.scanner._walk_files", fail_walk)
+
+    snapshot = scan_repository(tmp_path, max_files=0, max_images=0)
+
+    assert snapshot.image_inventory == []
+
+
+def test_image_inventory_excludes_sensitive_filenames(tmp_path: Path) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    (assets / "secrets.png").write_bytes(b"image")
+    (assets / "diagram.png").write_bytes(b"image")
+
+    snapshot = scan_repository(tmp_path)
+
+    assert snapshot.image_inventory == ["assets/diagram.png"]
+
+
+def test_text_scan_stops_before_walking_images_when_file_budget_is_exhausted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (tmp_path / "README.md").write_text("readme\n", encoding="utf-8")
+    (docs / "image.png").write_bytes(b"image")
+
+    original_walk = __import__("os").walk
+
+    def guarded_walk(root, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if Path(root) == docs:
+            pytest.fail("text scan should stop before walking docs when max_files is reached")
+        yield from original_walk(root, *args, **kwargs)
+
+    monkeypatch.setattr("claude_docsmith.scanner.os.walk", guarded_walk)
+
+    snapshot = scan_repository(tmp_path, max_files=1, max_images=0)
+
+    assert snapshot.inventory == ["README.md"]
+
+
+@pytest.mark.parametrize("target_name", ["secrets.png", "secrets.txt"])
+def test_image_inventory_validates_internal_symlink_targets(
+    tmp_path: Path, target_name: str
+) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    target = tmp_path / target_name
+    target.write_bytes(b"not-safe-inventory-content")
+    link = assets / "safe-looking.png"
+    try:
+        link.symlink_to(target)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+
+    snapshot = scan_repository(tmp_path)
+
+    assert snapshot.image_inventory == []
+
+
+def test_image_scan_budget_does_not_starve_later_roots(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    for index in range(11):
+        (docs / f"document-{index}.txt").write_text("text\n", encoding="utf-8")
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    (assets / "diagram.png").write_bytes(b"image")
+
+    snapshot = scan_repository(tmp_path, max_files=0, max_images=1)
+
+    assert snapshot.image_inventory == ["assets/diagram.png"]

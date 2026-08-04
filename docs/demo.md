@@ -13,7 +13,13 @@ This page walks through using `claude-docsmith` end-to-end. Screenshots show the
 /plugin install claude-docsmith@nikolareljin-plugins
 ```
 
-![Plugin installation in terminal](screenshots/install.png)
+For a local checkout, validate the plugin manifest before opening the session:
+
+```bash
+claude plugin validate .
+```
+
+![Plugin manifest validation passes](screenshots/install.png)
 
 ### Step 2 — Open Claude Code in your target repository
 
@@ -27,24 +33,24 @@ claude
 Type the command in the Claude Code session:
 
 ```
-/nr-update-docs
+/claude-docsmith:nr-update-docs
 ```
 
 Claude reads your repository structure, existing docs, config files, and source and proposes updated documentation.
 
-![Skill invocation and repo scan](screenshots/invoke.png)
+![User documentation dry run and context summary](screenshots/invoke.png)
 
 ### Step 4 — Review the proposed file set
 
 Claude lists the files it plans to create or update, along with a summary of changes and any open questions.
 
-![Proposed file review](screenshots/review.png)
+![Proposed user documentation file](screenshots/review.png)
 
 ### Step 5 — Confirm and apply
 
 Approve the proposed changes. Claude writes the updated documentation files into your repository.
 
-![Documentation written to repo](screenshots/result.png)
+![User documentation file and manifest written successfully](screenshots/result.png)
 
 ---
 
@@ -88,18 +94,31 @@ claude-docsmith /path/to/repo \
 
 ---
 
-## Adding screenshots
+## Capturing documentation screenshots
 
-Screenshots should be captured manually from real Claude Code sessions.
+The user-documentation workflow first searches existing image assets. When a new
+capture is useful, it proposes the target and key states and waits for approval
+before accessing a device or window.
 
-Place them in `docs/screenshots/` as PNG files. Suggested filenames:
+It selects an available local tool for the interface:
 
-| File | What to show |
-|------|-------------|
-| `install.png` | Plugin install command output |
-| `invoke.png` | `/nr-update-docs` typed in Claude Code |
-| `review.png` | Claude listing proposed doc files |
-| `result.png` | Updated markdown file open in editor |
+- Playwright for browser pages
+- ADB for approved Android devices or emulators
+- installed Apple debugging tools for supported targets
+- a CLI/TUI capture utility for terminal interfaces
+- a native window or region capture tool for desktop applications
 
-To record an animated demo, use a screen recorder and export as GIF or MP4.
-Link it in `README.md` under Quick Start.
+Captured PNG files use stable ids. The workflow inspects each image, recaptures
+screens that expose sensitive or personal information, updates the page with
+descriptive alt text, and records the result in the user screenshot manifest.
+When capture is unavailable, the page shows a visible pending callout and the
+manifest records reproducible steps plus the blocker.
+
+The screenshots on this page are real captures from a controlled demo session:
+
+| File | What it shows |
+|------|---------------|
+| `install.png` | Plugin manifest validation |
+| `invoke.png` | User-track dry-run context summary |
+| `review.png` | Proposed user documentation file |
+| `result.png` | Completed documentation update |

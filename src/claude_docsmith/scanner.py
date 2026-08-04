@@ -65,6 +65,11 @@ IGNORED_DIRS = {
 # go to source.
 IGNORED_DIR_SUFFIXES = (".egg-info", ".dist-info", ".egg")
 
+IMAGE_ROOTS = ("docs", "assets", "screenshots", ".github", "static", "public")
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
+DEFAULT_MAX_IMAGES = 200
+IMAGE_SCAN_MULTIPLIER = 10
+
 
 def _is_ignored_dir(name: str) -> bool:
     return name in IGNORED_DIRS or name.endswith(IGNORED_DIR_SUFFIXES)
@@ -93,6 +98,7 @@ def scan_repository(
     max_context_bytes: int = 128 * 1024,
     skip_tests: bool = False,
     redact_secrets: bool = True,
+    max_images: int = DEFAULT_MAX_IMAGES,
 ) -> RepoSnapshot:
     root = root.resolve()
     scanned_files: list[ScannedFile] = []
@@ -100,20 +106,23 @@ def scan_repository(
     redactions: list[Finding] = []
     skipped_sensitive: list[str] = []
     total_bytes = 0
+    image_inventory = _discover_images(root, max_images=max_images)
 
     def _add(path: Path, category: str) -> bool:
         nonlocal total_bytes
         if len(scanned_files) >= max_files:
             return False
+        remaining_budget = max_context_bytes - total_bytes
+        if remaining_budget <= 0:
+            return False
+        if path.suffix.lower() in IMAGE_SUFFIXES:
+            return True
         if skip_tests and category == "test":
             return True
         rel = path.relative_to(root).as_posix()
         if is_sensitive_path(rel):
             skipped_sensitive.append(rel)
             return True
-        remaining_budget = max_context_bytes - total_bytes
-        if remaining_budget <= 0:
-            return False
         try:
             with path.open("rb") as fh:
                 raw = fh.read(min(max_bytes_per_file, remaining_budget))
@@ -130,6 +139,8 @@ def scan_repository(
         return True
 
     for rel in DOC_CANDIDATES + CONFIG_CANDIDATES:
+        if len(scanned_files) >= max_files or total_bytes >= max_context_bytes:
+            break
         path = root / rel
         if _is_safe_file(path, root):
             if not _add(path, "doc-or-config"):
@@ -165,7 +176,39 @@ def scan_repository(
         total_bytes=total_bytes,
         redactions=redactions,
         skipped_sensitive=sorted(set(skipped_sensitive)),
+        image_inventory=image_inventory,
     )
+
+
+def _discover_images(root: Path, *, max_images: int = DEFAULT_MAX_IMAGES) -> list[str]:
+    """Return a bounded, stable inventory of safe image assets without reading them."""
+    if max_images <= 0:
+        return []
+
+    discovered: set[str] = set()
+    max_scanned_paths_per_root = max_images * IMAGE_SCAN_MULTIPLIER
+    for relative_root in IMAGE_ROOTS:
+        candidate = root / relative_root
+        if not _is_safe_dir(candidate, root):
+            continue
+        scanned_paths = 0
+        for path in _walk_files(candidate):
+            scanned_paths += 1
+            if scanned_paths > max_scanned_paths_per_root:
+                break
+            if path.suffix.lower() not in IMAGE_SUFFIXES or not _is_safe_file(path, root):
+                continue
+            relative_path = path.relative_to(root).as_posix()
+            resolved_path = path.resolve()
+            resolved_relative_path = resolved_path.relative_to(root).as_posix()
+            if resolved_path.suffix.lower() not in IMAGE_SUFFIXES:
+                continue
+            if is_sensitive_path(relative_path) or is_sensitive_path(resolved_relative_path):
+                continue
+            discovered.add(relative_path)
+            if len(discovered) >= max_images:
+                return sorted(discovered)
+    return sorted(discovered)
 
 
 def _detect_language(root: Path) -> str:
