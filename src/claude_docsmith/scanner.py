@@ -196,7 +196,10 @@ def _discover_images(root: Path, *, max_images: int = DEFAULT_MAX_IMAGES) -> lis
                 return sorted(discovered)
             if path.suffix.lower() not in IMAGE_SUFFIXES or not _is_safe_file(path, root):
                 continue
-            discovered.add(path.relative_to(root).as_posix())
+            relative_path = path.relative_to(root).as_posix()
+            if is_sensitive_path(relative_path):
+                continue
+            discovered.add(relative_path)
             if len(discovered) >= max_images:
                 return sorted(discovered)
     return sorted(discovered)

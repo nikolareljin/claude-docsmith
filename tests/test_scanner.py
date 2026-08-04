@@ -349,3 +349,14 @@ def test_zero_image_limit_skips_discovery(tmp_path: Path, monkeypatch: pytest.Mo
     snapshot = scan_repository(tmp_path, max_files=0, max_images=0)
 
     assert snapshot.image_inventory == []
+
+
+def test_image_inventory_excludes_sensitive_filenames(tmp_path: Path) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    (assets / "secrets.png").write_bytes(b"image")
+    (assets / "diagram.png").write_bytes(b"image")
+
+    snapshot = scan_repository(tmp_path)
+
+    assert snapshot.image_inventory == ["assets/diagram.png"]
