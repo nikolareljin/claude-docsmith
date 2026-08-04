@@ -110,19 +110,19 @@ def scan_repository(
 
     def _add(path: Path, category: str) -> bool:
         nonlocal total_bytes
-        if path.suffix.lower() in IMAGE_SUFFIXES:
-            return True
         if len(scanned_files) >= max_files:
             return False
+        remaining_budget = max_context_bytes - total_bytes
+        if remaining_budget <= 0:
+            return False
+        if path.suffix.lower() in IMAGE_SUFFIXES:
+            return True
         if skip_tests and category == "test":
             return True
         rel = path.relative_to(root).as_posix()
         if is_sensitive_path(rel):
             skipped_sensitive.append(rel)
             return True
-        remaining_budget = max_context_bytes - total_bytes
-        if remaining_budget <= 0:
-            return False
         try:
             with path.open("rb") as fh:
                 raw = fh.read(min(max_bytes_per_file, remaining_budget))
@@ -139,6 +139,8 @@ def scan_repository(
         return True
 
     for rel in DOC_CANDIDATES + CONFIG_CANDIDATES:
+        if len(scanned_files) >= max_files or total_bytes >= max_context_bytes:
+            break
         path = root / rel
         if _is_safe_file(path, root):
             if not _add(path, "doc-or-config"):

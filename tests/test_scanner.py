@@ -360,3 +360,25 @@ def test_image_inventory_excludes_sensitive_filenames(tmp_path: Path) -> None:
     snapshot = scan_repository(tmp_path)
 
     assert snapshot.image_inventory == ["assets/diagram.png"]
+
+
+def test_text_scan_stops_before_walking_images_when_file_budget_is_exhausted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (tmp_path / "README.md").write_text("readme\n", encoding="utf-8")
+    (docs / "image.png").write_bytes(b"image")
+
+    original_walk = __import__("os").walk
+
+    def guarded_walk(root, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if Path(root) == docs:
+            pytest.fail("text scan should stop before walking docs when max_files is reached")
+        yield from original_walk(root, *args, **kwargs)
+
+    monkeypatch.setattr("claude_docsmith.scanner.os.walk", guarded_walk)
+
+    snapshot = scan_repository(tmp_path, max_files=1, max_images=0)
+
+    assert snapshot.inventory == ["README.md"]

@@ -100,7 +100,7 @@ def test_documentation_image_references_resolve() -> None:
             if not resolved_target.is_relative_to(REPO_ROOT) or not resolved_target.is_file():
                 missing.append(f"{page.relative_to(REPO_ROOT)} -> {target}")
 
-    assert missing == []
+    assert missing == [], missing
 
 
 def test_version_strings_in_docs_match_the_package() -> None:
