@@ -382,3 +382,22 @@ def test_text_scan_stops_before_walking_images_when_file_budget_is_exhausted(
     snapshot = scan_repository(tmp_path, max_files=1, max_images=0)
 
     assert snapshot.inventory == ["README.md"]
+
+
+@pytest.mark.parametrize("target_name", ["secrets.png", "secrets.txt"])
+def test_image_inventory_validates_internal_symlink_targets(
+    tmp_path: Path, target_name: str
+) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    target = tmp_path / target_name
+    target.write_bytes(b"not-safe-inventory-content")
+    link = assets / "safe-looking.png"
+    try:
+        link.symlink_to(target)
+    except OSError as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+
+    snapshot = scan_repository(tmp_path)
+
+    assert snapshot.image_inventory == []
