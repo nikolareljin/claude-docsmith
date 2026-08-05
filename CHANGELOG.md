@@ -2,6 +2,29 @@
 
 All notable changes to claude-docsmith are documented here.
 
+## [1.4.0] - 2026-08-04
+
+### Added
+
+- A redesigned, responsive GitHub Pages experience with a shared navigation and
+  visual language for the Claude plugin suite while preserving Docsmith's two-track
+  documentation identity.
+- Ecosystem navigation linking the plugin marketplace, Reelsmith, Reposec, and the
+  standalone Docforge project.
+
+### Changed
+
+- Installation guidance now follows the suite-wide marketplace, install, reload,
+  verify, and canonical namespaced-command sequence.
+- Plugin and package homepage metadata now opens the Docsmith website, giving users
+  direct access to the complete guide from Claude's plugin interface.
+- Page styling is local and dependency-free, with responsive navigation, visible
+  focus treatment, and reduced-motion support.
+
+[1.4.0]: https://github.com/nikolareljin/claude-docsmith/compare/1.3.0...1.4.0
+
+---
+
 ## [1.3.0] - 2026-08-03
 
 ### Added

@@ -18,7 +18,7 @@
 
 </div>
 
-`claude-docsmith` is a Claude Code plugin for repository documentation, with an optional CLI for prompt-pack generation and local Ollama or Claude API fallback.
+`claude-docsmith` is a Claude Code plugin for repository documentation, with an optional CLI for prompt-pack generation and local Ollama or Claude API fallback. Visit the [Docsmith website](https://nikolareljin.github.io/claude-docsmith/) for the guided install, workflows, and related tools.
 
 It packages an `update-docs` skill, Claude Code command wiring, and a Python tool that scans a repository and prepares context for documentation generation. It generates **two independent documentation tracks**, each with its own prompt, its own provider call, and its own output tree:
 
@@ -113,7 +113,7 @@ pip install --user git+https://github.com/nikolareljin/claude-docsmith.git
 Pin a released version by appending a tag:
 
 ```bash
-pipx install git+https://github.com/nikolareljin/claude-docsmith.git@1.3.0
+pipx install git+https://github.com/nikolareljin/claude-docsmith.git@1.4.0
 ```
 
 **From source (for development)**

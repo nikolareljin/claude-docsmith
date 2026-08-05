@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-docsmith"
-version = "1.3.0"
+version = "1.4.0"
 description = "Generate user and developer documentation from a repository using Claude Code, with optional local Ollama fallback."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,7 +16,7 @@ authors = [
   { name = "Nikola Reljin" }
 ]
 keywords = ["claude-code", "documentation", "ollama", "plugin", "skill"]
-urls = { Homepage = "https://github.com/nikolareljin/claude-docsmith", Repository = "https://github.com/nikolareljin/claude-docsmith", Issues = "https://github.com/nikolareljin/claude-docsmith/issues" }
+urls = { Homepage = "https://nikolareljin.github.io/claude-docsmith/", Repository = "https://github.com/nikolareljin/claude-docsmith", Issues = "https://github.com/nikolareljin/claude-docsmith/issues" }
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
