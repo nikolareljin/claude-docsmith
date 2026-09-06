@@ -447,3 +447,10 @@ python3 scripts/render_site_mark.py   # site/logo-mark.svg, used by the docs sit
 
 Built and maintained by [Nikola Reljin](https://github.com/nikolareljin).
 See [ABOUT.md](./ABOUT.md) for contact and contribution links.
+
+
+## Clone traffic
+
+![Clone traffic](https://raw.githubusercontent.com/nikolareljin/stats/main/charts/claude-docsmith.svg)
+
+_Updated daily. Total and unique cloners over the last 14 days._
